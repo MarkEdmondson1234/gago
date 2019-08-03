@@ -1,0 +1,6 @@
+gago:
+  view: 81416156
+  metrics: ga:sessions,ga:users
+  dimensions: ga:date,ga:sourceMedium
+  start: 2019-01-01
+  end: 2019-08-01

@@ -75,7 +75,7 @@ func parseArgs() args {
 		// This can also be done by passing -h or --help flags
 		fmt.Print(parser.Usage(err))
 	}
-	// Finally return the collected string
+
 	return args{
 		config:     *config,
 		auth:       *auth,
@@ -97,7 +97,12 @@ func readConfigYaml(filename string) *config.Config {
 	if err != nil {
 		panic(err)
 	}
-	return cfg
+
+	cfgg, err := cfg.Get("gago")
+	if err != nil {
+		panic(err)
+	}
+	return cfgg
 }
 
 func csvOutput(filename string) {
@@ -117,7 +122,7 @@ func csvOutput(filename string) {
 
 	err := csvtag.DumpToFile(tab, filename)
 	if err != nil {
-		panic(err)
+		log.Fatal("Couldn't write to file")
 	}
 }
 
@@ -127,6 +132,37 @@ func main() {
 
 	cfg := readConfigYaml(args.config)
 
-	analyticsreportingService, analyticsService := authenticate(args.auth)
+	var view = args.view
+
+	if args.view == "" {
+		viewid, err := cfg.String("view")
+		if err != nil {
+			log.Fatal("No viewId passed to fetch data for")
+		}
+		view = viewid
+	} else {
+		view = args.view
+	}
+
+	t := fmt.Sprintf("Configuration read for viewId: %s", view)
+	fmt.Println(t)
+
+	//analyticsreportingService, analyticsService := authenticate(args.auth)
+	_, analyticsService := authenticate(args.auth)
+	accountResponse, err := analyticsService.Management.Accounts.List().Do()
+	if err != nil {
+		log.Fatal("Can't find any accounts for this authentication")
+	}
+	var accountID string
+
+	fmt.Println("Found the following accounts:")
+	for i, acc := range accountResponse.Items {
+
+		if i == 0 {
+			accountID = acc.Id
+		}
+
+		fmt.Println(accountID, acc.Name)
+	}
 
 }
