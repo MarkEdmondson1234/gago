@@ -12,6 +12,7 @@ Create a CLI that will download GA multi-threaded, using anti-sampling, auto-pag
 * https://godoc.org/golang.org/x/oauth2/google#CredentialsFromJSON
 * https://github.com/golang/oauth2/blob/master/google/default.go#L76
 * https://golang.org/doc/codewalk/functions/
+* [Building for platforms](https://stackoverflow.com/questions/12168873/cross-compile-go-on-osx)
 
 ## Deploy
 
