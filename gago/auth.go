@@ -1,41 +1,27 @@
 package gago
 
 import (
+	"context"
 	"log"
 
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
+	"google.golang.org/api/option"
+
 	"google.golang.org/api/analytics/v3"
 	"google.golang.org/api/analyticsreporting/v4"
-
-	"io/ioutil"
 
 	csvtag "github.com/artonge/go-csv-tag"
 )
 
 // Authenticate Create clients for v4 and v3 Google Analytics API via JSON credentials file
 func Authenticate(file string) (*analyticsreporting.Service, *analytics.Service) {
-	key, err := ioutil.ReadFile(file)
+
+	ctx := context.Background()
+	analyticsreportingService, err := analyticsreporting.NewService(ctx, option.WithCredentialsFile(file))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	jwtConf, err := google.JWTConfigFromJSON(
-		key,
-		analytics.AnalyticsReadonlyScope,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	httpClient := jwtConf.Client(oauth2.NoContext)
-
-	//how does this work with NewService?
-	analyticsreportingService, err := analyticsreporting.New(httpClient)
-	if err != nil {
-		log.Fatal(err)
-	}
-	analyticsService, err := analytics.New(httpClient)
+	analyticsService, err := analytics.NewService(ctx, option.WithCredentialsFile(file))
 	if err != nil {
 		log.Fatal(err)
 	}

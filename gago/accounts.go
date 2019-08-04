@@ -3,13 +3,13 @@ package gago
 import (
 	"log"
 
-	"google.golang.org/api/analytics/v3"
+	ga "google.golang.org/api/analytics/v3"
 
 	"fmt"
 )
 
 // GetAccounts gets the analytics accounts available for this user
-func GetAccounts(service *analytics.Service) {
+func GetAccounts(service *ga.Service) {
 
 	accountResponse, err := service.Management.Accounts.List().Do()
 	if err != nil {
@@ -25,7 +25,7 @@ func GetAccounts(service *analytics.Service) {
 }
 
 //GetAccountSummary gets account summary including web properties and viewIds
-func GetAccountSummary(service *analytics.Service) {
+func GetAccountSummary(service *ga.Service) {
 
 	accountSummaryResponse, err := service.Management.AccountSummaries.List().Do()
 	if err != nil {
