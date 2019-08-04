@@ -120,4 +120,6 @@ func main() {
 
 	gago.GetAccounts(analyticsService)
 
+	gago.GetAccountSummary(analyticsService)
+
 }
