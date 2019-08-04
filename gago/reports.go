@@ -6,25 +6,26 @@ import (
 	ga "google.golang.org/api/analyticsreporting/v4"
 )
 
-// makeRequest creates the request(s) for fetchReport
-// func makeRequest(
-// 	start, end string) *ga.GetReportsRequest {
+//makeRequest creates the request(s) for fetchReport
+func makeRequest(
+	start, end, dimension metric string) *ga.ReportRequest {
 
-// 	daterangep := ga.DateRange{StartDate: start, EndDate: end}
+	requests := ga.ReportRequest{}
+	requests.DateRanges = []*ga.DateRange{{StartDate: start, EndDate: end}}
+	requests.Dimensions = []*ga.Dimension{{Name: dimension}}
+	requests.Metrics = []*ga.Metric{{Expression: metric}}
 
-// 	requests := ga.ReportRequest{}
-
-// 	reportreq := ga.GetReportsRequest{}
-
-// 	return start
-// }
+	return &requests
+}
 
 // FetchReport Perform the GAv4 API request
 func fetchReport(
 	service *ga.Service,
-	reports *ga.GetReportsRequest) *ga.GetReportsResponse {
+	reports []*ga.ReportRequest) *ga.GetReportsResponse {
 
-	report, err := service.Reports.BatchGet(reports).Do()
+	reportreq := &ga.GetReportsRequest{ReportRequests: reports}
+
+	report, err := service.Reports.BatchGet(reportreq).Do()
 	if err != nil {
 		log.Fatal(err)
 	}
