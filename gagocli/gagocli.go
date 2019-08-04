@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/MarkEdmondson1234/gago"
+	"github.com/MarkEdmondson1234/gago/gago"
 
 	"fmt"
 	"io/ioutil"

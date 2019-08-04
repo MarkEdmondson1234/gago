@@ -91,7 +91,7 @@ Found the following accounts:
 
 ### gago library
 
-The Google Analytics API functions are in a library so it can be used for other Go programs, available via github.com/MarkEdmondson1234/gago
+The Google Analytics API functions are in a library so it can be used for other Go programs, available via github.com/MarkEdmondson1234/gago/gago
 
 Current functions:
 
