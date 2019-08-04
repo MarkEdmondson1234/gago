@@ -8,7 +8,7 @@ import (
 
 //makeRequest creates the request(s) for fetchReport
 func makeRequest(
-	start, end, dimension metric string) *ga.ReportRequest {
+	start, end, dimension, metric string) *ga.ReportRequest {
 
 	requests := ga.ReportRequest{}
 	requests.DateRanges = []*ga.DateRange{{StartDate: start, EndDate: end}}
