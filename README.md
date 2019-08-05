@@ -83,7 +83,7 @@ gago:
 This and the JSON auth file are required to be sent in the CLI arguments `c` and `a`:
 
 ```bash
-$> ./bin/gago_cli -c config.yml -a your-auth-file.json
+$> ./bin/gagocli -c config.yml -a your-auth-file.json
 Configuration read for viewId: 8141444
 Found the following accounts:
 474333439 MarkEdmondson
