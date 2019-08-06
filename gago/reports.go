@@ -104,8 +104,9 @@ func makeRequest(
 	requests.SamplingLevel = "LARGE"
 	requests.PageToken = pageToken
 
+	// print out json request
 	js, _ := requests.MarshalJSON()
-	fmt.Println(js)
+	fmt.Println(string(js))
 
 	return &requests
 }
