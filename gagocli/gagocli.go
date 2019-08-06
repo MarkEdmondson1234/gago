@@ -115,11 +115,25 @@ func main() {
 	t := fmt.Sprintf("Configuration read for viewId: %s", view)
 	fmt.Println(t)
 
-	//analyticsreportingService, analyticsService := authenticate(args.auth)
-	_, analyticsService := gago.Authenticate(args.auth)
+	analyticsreportingService, analyticsService := gago.Authenticate(args.auth)
+	//_, analyticsService := gago.Authenticate(args.auth)
 
 	gago.GetAccounts(analyticsService)
 
 	gago.GetAccountSummary(analyticsService)
+
+	report := gago.GoogleAnalytics(
+		analyticsreportingService,
+		"81416941",
+		"2019-07-01",
+		"2019-08-01",
+		"ga:date",
+		"ga:sessions",
+		100,
+		false)
+
+	for _, r := range report {
+		fmt.Println(r.Totals)
+	}
 
 }
