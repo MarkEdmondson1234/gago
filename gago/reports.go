@@ -89,15 +89,15 @@ func makeRequest(
 
 	metSplit := strings.Split(metrics, ",")
 	metp := make([]*ga.Metric, len(metSplit))
-	for _, met := range dimSplit {
+	for _, met := range metSplit {
 		metp = append(metp, &ga.Metric{Expression: met})
 	}
 
 	// TODO: Make multiple requests based on pagesize
 	requests := ga.ReportRequest{}
 	requests.DateRanges = daterangep
-	requests.Dimensions = dimp
-	requests.Metrics = metp
+	requests.Dimensions = dimp[1:]
+	requests.Metrics = metp[1:]
 	requests.IncludeEmptyRows = true
 	requests.PageSize = pageSize
 	requests.ViewId = viewID
