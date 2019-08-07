@@ -93,8 +93,8 @@ func makeRequest(
 	// TODO: Make multiple requests based on pagesize
 	requests := ga.ReportRequest{}
 	requests.DateRanges = daterangep
-	requests.Dimensions = dimp[1:]
-	requests.Metrics = metp[1:]
+	requests.Dimensions = dimp
+	requests.Metrics = metp
 	requests.IncludeEmptyRows = true
 	requests.PageSize = pageSize
 	requests.ViewId = viewID
