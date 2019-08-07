@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 
 	"github.com/MarkEdmondson1234/gago/gago"
@@ -116,7 +117,6 @@ func main() {
 	fmt.Println(t)
 
 	analyticsreportingService, analyticsService := gago.Authenticate(args.auth)
-	//_, analyticsService := gago.Authenticate(args.auth)
 
 	gago.GetAccounts(analyticsService)
 
@@ -124,16 +124,17 @@ func main() {
 
 	report := gago.GoogleAnalytics(
 		analyticsreportingService,
-		"81416941",
+		"81416156",
 		"2019-07-01",
 		"2019-08-01",
-		"ga:date",
-		"ga:sessions",
+		"ga:date,ga:sourceMedium",
+		"ga:sessions,ga:users",
 		100,
 		false)
 
 	for _, r := range report {
-		fmt.Println(r.Totals)
+		js, _ := json.Marshal(r)
+		fmt.Println("Response:", string(js))
 	}
 
 }

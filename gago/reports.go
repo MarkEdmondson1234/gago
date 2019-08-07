@@ -49,18 +49,15 @@ func GoogleAnalytics(
 	res1 := fetchReport(service, reqp, useResourceQuotas)
 	responses[0] = res1
 
-	parseReportList := make([]*ParseReport, 5)
-	var pr *ParseReport
-	var pt *string
-	for _, r := range responses {
+	parseReportList := make([]*ParseReport, 1)
 
-		pr, pt = ParseReportsResponse(r)
-		parseReportList = append(parseReportList, pr)
-	}
+	parsedReport, pt := ParseReportsResponse(res1)
 
-	if *pt != "" {
+	if pt != "" {
 		fmt.Println("Page from ", pt)
 	}
+
+	parseReportList[0] = parsedReport
 
 	return parseReportList
 
@@ -83,14 +80,14 @@ func makeRequest(
 	dimSplit := strings.Split(dimensions, ",")
 	// make the slice of length of dimensions
 	dimp := make([]*ga.Dimension, len(dimSplit))
-	for _, dim := range dimSplit {
-		dimp = append(dimp, &ga.Dimension{Name: dim})
+	for i, dim := range dimSplit {
+		dimp[i] = &ga.Dimension{Name: dim}
 	}
 
 	metSplit := strings.Split(metrics, ",")
 	metp := make([]*ga.Metric, len(metSplit))
-	for _, met := range metSplit {
-		metp = append(metp, &ga.Metric{Expression: met})
+	for i, met := range metSplit {
+		metp[i] = &ga.Metric{Expression: met}
 	}
 
 	// TODO: Make multiple requests based on pagesize
@@ -106,7 +103,7 @@ func makeRequest(
 
 	// print out json request
 	js, _ := requests.MarshalJSON()
-	fmt.Println(string(js))
+	fmt.Println("Request:", string(js))
 
 	return &requests
 }
@@ -138,19 +135,21 @@ type ParseReportRow struct {
 
 // ParseReport A parsed Report after all batching and paging
 type ParseReport struct {
-	Rows               []*ParseReportRow `json:"values,omitempty"`
-	DataLastRefreshed  string            `json:"dataLastRefreshed,omitempty"`
-	IsDataGolden       bool              `json:"isDataGolden,omitempty"`
-	Maximums           []string          `json:"maximums,omitempty"`
-	Minimums           []string          `json:"minimums,omitempty"`
-	RowCount           int64             `json:"rowCount,omitempty"`
-	SamplesReadCounts  googleapi.Int64s  `json:"samplesReadCounts,omitempty"`
-	SamplingSpaceSizes googleapi.Int64s  `json:"samplingSpaceSizes,omitempty"`
-	Totals             []string          `json:"totals,omitempty"`
+	ColumnHeaderDimension []string                `json:"dimensionHeaderEntries,omitempty"`
+	ColumnHeaderMetrics   []*ga.MetricHeaderEntry `json:"metricHeaderEntries,omitempty"`
+	Rows                  []*ParseReportRow       `json:"values,omitempty"`
+	DataLastRefreshed     string                  `json:"dataLastRefreshed,omitempty"`
+	IsDataGolden          bool                    `json:"isDataGolden,omitempty"`
+	Maximums              []string                `json:"maximums,omitempty"`
+	Minimums              []string                `json:"minimums,omitempty"`
+	RowCount              int64                   `json:"rowCount,omitempty"`
+	SamplesReadCounts     googleapi.Int64s        `json:"samplesReadCounts,omitempty"`
+	SamplingSpaceSizes    googleapi.Int64s        `json:"samplingSpaceSizes,omitempty"`
+	Totals                []string                `json:"totals,omitempty"`
 }
 
 // ParseReportsResponse turns ga.GetReportsResponse into ParseReport
-func ParseReportsResponse(res *ga.GetReportsResponse) (parsedReport *ParseReport, pageToken *string) {
+func ParseReportsResponse(res *ga.GetReportsResponse) (parsedReport *ParseReport, pageToken string) {
 
 	if res.QueryCost > 0 {
 		fmt.Println("QueryCost: ", res.QueryCost, " ResourcesQuotasRemaining: ", res.ResourceQuotasRemaining)
@@ -161,6 +160,13 @@ func ParseReportsResponse(res *ga.GetReportsResponse) (parsedReport *ParseReport
 	for i, report := range res.Reports {
 
 		if i == 0 {
+			var metHeaders []*ga.MetricHeaderEntry
+			for _, met := range report.ColumnHeader.MetricHeader.MetricHeaderEntries {
+				metHeaders = append(metHeaders, met)
+			}
+
+			parsed.ColumnHeaderDimension = report.ColumnHeader.Dimensions
+			parsed.ColumnHeaderMetrics = metHeaders
 			parsed.DataLastRefreshed = report.Data.DataLastRefreshed
 			parsed.IsDataGolden = report.Data.IsDataGolden
 			parsed.Maximums = report.Data.Maximums[0].Values
@@ -172,19 +178,18 @@ func ParseReportsResponse(res *ga.GetReportsResponse) (parsedReport *ParseReport
 		}
 
 		parsedRowp := make([]*ParseReportRow, len(report.Data.Rows))
-		for _, row := range report.Data.Rows {
-			parsedRowp = append(parsedRowp, &ParseReportRow{Dimensions: row.Dimensions, Metrics: row.Metrics[0].Values})
+		for i, row := range report.Data.Rows {
+			mets := row.Metrics[0].Values
+			parsedRowp[i] = &ParseReportRow{Dimensions: row.Dimensions, Metrics: mets}
 		}
 		parsed.Rows = parsedRowp
 
 		// 0 indexed, only last page of results
 		if i == len(res.Reports) {
-			pageToken = &report.NextPageToken
+			pageToken = report.NextPageToken
 		}
 	}
 
-	parsedReport = &parsed
-
-	return parsedReport, pageToken
+	return &parsed, pageToken
 
 }
