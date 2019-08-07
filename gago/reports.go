@@ -38,6 +38,7 @@ func GoogleAnalytics(
 	fetchedRows = 0
 	fetchMore := true
 	for i := 0; fetchMore; i++ {
+		fmt.Println("paging: ", i)
 		req := makeRequest(
 			viewID,
 			start,
@@ -51,7 +52,14 @@ func GoogleAnalytics(
 		responses[i] = res1
 		parsedReport, pt := ParseReportsResponse(res1)
 		parseReportList[i] = parsedReport
+
+		fmt.Println("pt:", pt)
+		// stop fetching if no pagetoken
 		fetchMore = pt != ""
+		// stop fetching if we adjusted the pageSize down
+		if fetchMore {
+			fetchMore = pageSize < pageLimit
+		}
 
 		fetchedRows = fetchedRows + pageSize
 

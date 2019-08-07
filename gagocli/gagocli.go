@@ -13,8 +13,6 @@ import (
 	"github.com/akamensky/argparse"
 
 	"github.com/olebedev/config"
-
-	csvtag "github.com/artonge/go-csv-tag"
 )
 
 type args struct {
@@ -74,27 +72,6 @@ func readConfigYaml(filename string) *config.Config {
 	return cfgg
 }
 
-func csvOutput(filename string) {
-	type Demo struct { // A structure with tags
-		Name string  `csv:"name"`
-		ID   int     `csv:"ID"`
-		Num  float64 `csv:"number"`
-	}
-
-	tab := []Demo{ // Create the slice where to put the file content
-		Demo{
-			Name: "some name",
-			ID:   1,
-			Num:  42.5,
-		},
-	}
-
-	err := csvtag.DumpToFile(tab, filename)
-	if err != nil {
-		log.Fatal("Couldn't write to file")
-	}
-}
-
 func main() {
 
 	args := parseArgs()
@@ -122,14 +99,30 @@ func main() {
 
 	gago.GetAccountSummary(analyticsService)
 
+	// report := gago.GoogleAnalytics(
+	// 	analyticsreportingService,
+	// 	"81416156",
+	// 	"2019-07-01",
+	// 	"2019-08-01",
+	// 	"ga:date,ga:sourceMedium",
+	// 	"ga:sessions,ga:users",
+	// 	100,
+	// 	false,
+	// 	false)
+
+	// for _, r := range report {
+	// 	js, _ := json.Marshal(r)
+	// 	fmt.Println("Response:", string(js))
+	// }
+
 	report := gago.GoogleAnalytics(
 		analyticsreportingService,
 		"81416156",
-		"2019-07-01",
+		"2017-07-01",
 		"2019-08-01",
-		"ga:date,ga:sourceMedium",
+		"ga:date,ga:sourceMedium,ga:pagePath,ga:hour,ga:minute",
 		"ga:sessions,ga:users",
-		100,
+		50000,
 		false,
 		false)
 
