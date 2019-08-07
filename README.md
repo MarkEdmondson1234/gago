@@ -97,4 +97,7 @@ Current functions:
 
 * Authenticate
 * GetAccounts
-TODO: reporting APIs
+* GetAccountSummary
+* GoogleAnalytics
+
+Only dimensions and metrics can be fetched for first page at the moment.

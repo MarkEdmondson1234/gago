@@ -13,51 +13,54 @@ import (
 func GoogleAnalytics(
 	service *ga.Service,
 	viewID, start, end, dimensions, metrics string,
-	pageSize int64,
-	useResourceQuotas bool) []*ParseReport {
+	maxRows int64,
+	useResourceQuotas, antiSample bool) []*ParseReport {
 
-	// default value
-	if pageSize == 0 {
-		pageSize = 10000
-	}
 	// init ""
 	var pageToken string
+	var pageSize, pageLimit, fetchedRows int64
 
-	// array of arrays of report requests
-	//reqp := make([][]*ga.ReportRequest, 1)
+	pageLimit = 10000
 
-	reqp := make([]*ga.ReportRequest, 1)
-
-	// multiple reports based on max rows will go here
-	req := makeRequest(
-		viewID,
-		start,
-		end,
-		dimensions,
-		metrics,
-		pageSize,
-		pageToken)
-	reqp[0] = req
-
-	responses := make([]*ga.GetReportsResponse, 5)
-
-	// for _, r := range reqp {
-	// 	thisResult := fetchReport(service, r, useResourceQuotas)
-	// 	responses = append(responses, thisResult)
-	// }
-
-	res1 := fetchReport(service, reqp, useResourceQuotas)
-	responses[0] = res1
-
-	parseReportList := make([]*ParseReport, 1)
-
-	parsedReport, pt := ParseReportsResponse(res1)
-
-	if pt != "" {
-		fmt.Println("Page from ", pt)
+	if maxRows < 0 {
+		// try to fetch as many rows as possible
+		pageSize = pageLimit
+	} else if maxRows < pageLimit {
+		// if first page needs to fetch less than 10k default
+		pageSize = maxRows - 1
 	}
 
-	parseReportList[0] = parsedReport
+	// only more than 1 if fetching many at once
+	reqp := make([]*ga.ReportRequest, 1)
+	responses := make([]*ga.GetReportsResponse, 1)
+	parseReportList := make([]*ParseReport, 1)
+
+	fetchedRows = 0
+	fetchMore := true
+	for i := 0; fetchMore; i++ {
+		req := makeRequest(
+			viewID,
+			start,
+			end,
+			dimensions,
+			metrics,
+			pageSize,
+			pageToken)
+		reqp[i] = req
+		res1 := fetchReport(service, reqp, useResourceQuotas)
+		responses[i] = res1
+		parsedReport, pt := ParseReportsResponse(res1)
+		parseReportList[i] = parsedReport
+		fetchMore = pt != ""
+
+		fetchedRows = fetchedRows + pageSize
+
+		// do we need to modify pageSize for next loop?
+		if parsedReport.RowCount > (fetchedRows + pageLimit) {
+			pageSize = parsedReport.RowCount - fetchedRows
+		}
+
+	}
 
 	return parseReportList
 
@@ -76,9 +79,7 @@ func makeRequest(
 	// Fill the 1st element with a pointer to a ga.DateRange
 	daterangep[0] = &ga.DateRange{StartDate: start, EndDate: end}
 
-	// a slice of dimension strings
 	dimSplit := strings.Split(dimensions, ",")
-	// make the slice of length of dimensions
 	dimp := make([]*ga.Dimension, len(dimSplit))
 	for i, dim := range dimSplit {
 		dimp[i] = &ga.Dimension{Name: dim}

@@ -130,6 +130,7 @@ func main() {
 		"ga:date,ga:sourceMedium",
 		"ga:sessions,ga:users",
 		100,
+		false,
 		false)
 
 	for _, r := range report {
