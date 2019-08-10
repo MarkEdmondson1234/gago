@@ -30,10 +30,10 @@ func GoogleAnalytics(
 		pageSize = maxRows - 1
 	}
 
-	// only more than 1 if fetching many at once
-	reqp := make([]*ga.ReportRequest, 1)
-	responses := make([]*ga.GetReportsResponse, 1)
-	parseReportList := make([]*ParseReport, 1)
+        maxPages := (maxRows / pageLimit) + 1
+	reqp := make([]*ga.ReportRequest, maxPages)
+	responses := make([]*ga.GetReportsResponse, maxPages)
+	parseReportList := make([]*ParseReport, maxPages)
 
 	fetchedRows = 0
 	fetchMore := true
@@ -194,7 +194,7 @@ func ParseReportsResponse(res *ga.GetReportsResponse) (parsedReport *ParseReport
 		parsed.Rows = parsedRowp
 
 		// 0 indexed, only last page of results
-		if i == len(res.Reports) {
+		if i == (len(res.Reports) - 1) {
 			pageToken = report.NextPageToken
 		}
 	}
