@@ -118,17 +118,17 @@ func main() {
 	report := gago.GoogleAnalytics(
 		analyticsreportingService,
 		"81416156",
-		"2017-07-01",
+		"2019-07-01",
 		"2019-08-01",
-		"ga:date,ga:sourceMedium,ga:pagePath,ga:hour,ga:minute",
+		"ga:date,ga:sourceMedium",
 		"ga:sessions,ga:users",
-		50000,
+		42,
 		false,
 		false)
 
 	for _, r := range report {
 		js, _ := json.Marshal(r)
-		fmt.Println("Response:", string(js))
+		fmt.Println(string(js))
 	}
 
 }

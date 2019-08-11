@@ -1,8 +1,10 @@
 package gago
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 
 	ga "google.golang.org/api/analyticsreporting/v4"
@@ -20,54 +22,67 @@ func GoogleAnalytics(
 	var pageToken string
 	var pageSize, pageLimit, fetchedRows int64
 
-	pageLimit = 10000
+	pageLimit = 10
 
-	if maxRows < 0 {
-		// try to fetch as many rows as possible
-		pageSize = pageLimit
-	} else if maxRows < pageLimit {
+	pageSize = pageLimit
+
+	if maxRows < pageLimit {
 		// if first page needs to fetch less than 10k default
 		pageSize = maxRows - 1
 	}
 
-        maxPages := (maxRows / pageLimit) + 1
-	reqp := make([]*ga.ReportRequest, maxPages)
+	maxPages := (maxRows / pageLimit) + 1
+	reqp := make([]*ga.ReportRequest, 5)
 	responses := make([]*ga.GetReportsResponse, maxPages)
 	parseReportList := make([]*ParseReport, maxPages)
+
+	fmt.Println("maxPages: ", maxPages)
 
 	fetchedRows = 0
 	fetchMore := true
 	for i := 0; fetchMore; i++ {
-		fmt.Println("paging: ", i)
-		req := makeRequest(
-			viewID,
-			start,
-			end,
-			dimensions,
-			metrics,
-			pageSize,
-			pageToken)
-		reqp[i] = req
+		fmt.Println("paging: ", i, fetchMore)
+
+		// a loop around 5 requests
+		for j := range reqp {
+			fmt.Println("ps", pageSize, " pt", pageToken, " pl", pageLimit, " mr", maxRows, "fr", fetchedRows)
+			req := makeRequest(
+				viewID,
+				start,
+				end,
+				dimensions,
+				metrics,
+				pageSize,
+				pageToken)
+			reqp[j] = req
+
+			pageToken = strconv.FormatInt(fetchedRows+pageSize, 10)
+			fetchedRows = fetchedRows + pageSize
+			// stop fetching if no pagetoken
+			// stop fetching if we adjusted the pageSize down
+			// stop fetching if we've reached maxRows
+			if pageSize < pageLimit || (maxRows > 0 && fetchedRows >= maxRows) {
+				fmt.Println("dont fetchmore")
+				fetchMore = false
+				break
+			}
+
+			// do we need to modify pageSize for next loop?
+			if maxRows > 0 && (fetchedRows+pageSize) > maxRows {
+				pageSize = maxRows - fetchedRows
+			}
+		}
+
+		// fetch requests
+		// assign this for PArsdReotsResponse dones error
 		res1 := fetchReport(service, reqp, useResourceQuotas)
 		responses[i] = res1
-		parsedReport, pt := ParseReportsResponse(res1)
+
+	}
+
+	for i, res := range responses {
+		parsedReport, _ := ParseReportsResponse(res)
 		parseReportList[i] = parsedReport
-
-		fmt.Println("pt:", pt)
-		// stop fetching if no pagetoken
-		fetchMore = pt != ""
-		// stop fetching if we adjusted the pageSize down
-		if fetchMore {
-			fetchMore = pageSize < pageLimit
-		}
-
-		fetchedRows = fetchedRows + pageSize
-
-		// do we need to modify pageSize for next loop?
-		if parsedReport.RowCount > (fetchedRows + pageLimit) {
-			pageSize = parsedReport.RowCount - fetchedRows
-		}
-
 	}
 
 	return parseReportList
@@ -131,6 +146,9 @@ func fetchReport(
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	js, _ := json.Marshal(report)
+	fmt.Println(string(js))
 
 	return report
 
