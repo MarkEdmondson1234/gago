@@ -16,7 +16,7 @@ func GoogleAnalytics(
 	service *ga.Service,
 	viewID, start, end, dimensions, metrics string,
 	maxRows int64,
-	useResourceQuotas, antiSample bool) []*ParseReport {
+	useResourceQuotas, antiSample bool) *ParseReport {
 
 	// init ""
 	var pageToken string
@@ -31,21 +31,22 @@ func GoogleAnalytics(
 		pageSize = maxRows - 1
 	}
 
-	maxPages := (maxRows / pageLimit) + 1
+	maxPages := (maxRows / (pageLimit * 5)) + 1
 	reqp := make([]*ga.ReportRequest, 5)
 	responses := make([]*ga.GetReportsResponse, maxPages)
-	parseReportList := make([]*ParseReport, maxPages)
+	//parseReportList := make([]*ParseReport, maxPages)
 
 	fmt.Println("maxPages: ", maxPages)
 
 	fetchedRows = 0
 	fetchMore := true
+
 	for i := 0; fetchMore; i++ {
 		fmt.Println("paging: ", i, fetchMore)
 
 		// a loop around 5 requests
 		for j := range reqp {
-			fmt.Println("ps", pageSize, " pt", pageToken, " pl", pageLimit, " mr", maxRows, "fr", fetchedRows)
+			// fmt.Println("ps", pageSize, " pt", pageToken, " pl", pageLimit, " mr", maxRows, "fr", fetchedRows)
 			req := makeRequest(
 				viewID,
 				start,
@@ -62,7 +63,7 @@ func GoogleAnalytics(
 			// stop fetching if we adjusted the pageSize down
 			// stop fetching if we've reached maxRows
 			if pageSize < pageLimit || (maxRows > 0 && fetchedRows >= maxRows) {
-				fmt.Println("dont fetchmore")
+				// fmt.Println("dont fetchmore")
 				fetchMore = false
 				break
 			}
@@ -75,17 +76,21 @@ func GoogleAnalytics(
 
 		// fetch requests
 		// assign this for PArsdReotsResponse dones error
-		res1 := fetchReport(service, reqp, useResourceQuotas)
-		responses[i] = res1
+		responses[i] = fetchReport(service, reqp, useResourceQuotas)
+
+		// for k, r := range responses {
+		// 	parsedReport, _ := ParseReportsResponse(r)
+		// 	parseReportList[k] = parsedReport
+		// }
 
 	}
 
-	for i, res := range responses {
-		parsedReport, _ := ParseReportsResponse(res)
-		parseReportList[i] = parsedReport
-	}
+	js, _ := json.Marshal(responses)
+	fmt.Println("\n# All Responses:", string(js))
 
-	return parseReportList
+	parseReports, _ := ParseReportsResponse(responses, fetchedRows)
+
+	return parseReports
 
 }
 
@@ -127,7 +132,7 @@ func makeRequest(
 
 	// print out json request
 	js, _ := requests.MarshalJSON()
-	fmt.Println("Request:", string(js))
+	fmt.Println("\n# Request:", string(js))
 
 	return &requests
 }
@@ -148,7 +153,7 @@ func fetchReport(
 	}
 
 	js, _ := json.Marshal(report)
-	fmt.Println(string(js))
+	fmt.Println("\n## fetched ", string(js))
 
 	return report
 
@@ -176,46 +181,60 @@ type ParseReport struct {
 }
 
 // ParseReportsResponse turns ga.GetReportsResponse into ParseReport
-func ParseReportsResponse(res *ga.GetReportsResponse) (parsedReport *ParseReport, pageToken string) {
-
-	if res.QueryCost > 0 {
-		fmt.Println("QueryCost: ", res.QueryCost, " ResourcesQuotasRemaining: ", res.ResourceQuotasRemaining)
-	}
+func ParseReportsResponse(responses []*ga.GetReportsResponse, maxRows int64) (parsedReport *ParseReport, pageToken string) {
 
 	parsed := ParseReport{}
+	parsedRowp := make([]*ParseReportRow, maxRows+1)
+	rowNum := 0
+	fmt.Println("rows to fetch: ", maxRows)
 
-	for i, report := range res.Reports {
+	for _, res := range responses {
 
-		if i == 0 {
-			var metHeaders []*ga.MetricHeaderEntry
-			for _, met := range report.ColumnHeader.MetricHeader.MetricHeaderEntries {
-				metHeaders = append(metHeaders, met)
+		if res.QueryCost > 0 {
+			fmt.Println("QueryCost: ", res.QueryCost, " ResourcesQuotasRemaining: ", res.ResourceQuotasRemaining)
+		}
+
+		for i, report := range res.Reports {
+			fmt.Println("parse i:", i)
+			js, _ := json.Marshal(report)
+			fmt.Println(string(js))
+
+			if i == 0 {
+				var metHeaders []*ga.MetricHeaderEntry
+				for _, met := range report.ColumnHeader.MetricHeader.MetricHeaderEntries {
+					metHeaders = append(metHeaders, met)
+				}
+
+				parsed.ColumnHeaderDimension = report.ColumnHeader.Dimensions
+				parsed.ColumnHeaderMetrics = metHeaders
+				parsed.DataLastRefreshed = report.Data.DataLastRefreshed
+				parsed.IsDataGolden = report.Data.IsDataGolden
+				parsed.Maximums = report.Data.Maximums[0].Values
+				parsed.Minimums = report.Data.Minimums[0].Values
+				parsed.RowCount = report.Data.RowCount
+				parsed.SamplesReadCounts = report.Data.SamplesReadCounts
+				parsed.SamplingSpaceSizes = report.Data.SamplingSpaceSizes
+				parsed.Totals = report.Data.Totals[0].Values
 			}
 
-			parsed.ColumnHeaderDimension = report.ColumnHeader.Dimensions
-			parsed.ColumnHeaderMetrics = metHeaders
-			parsed.DataLastRefreshed = report.Data.DataLastRefreshed
-			parsed.IsDataGolden = report.Data.IsDataGolden
-			parsed.Maximums = report.Data.Maximums[0].Values
-			parsed.Minimums = report.Data.Minimums[0].Values
-			parsed.RowCount = report.Data.RowCount
-			parsed.SamplesReadCounts = report.Data.SamplesReadCounts
-			parsed.SamplingSpaceSizes = report.Data.SamplingSpaceSizes
-			parsed.Totals = report.Data.Totals[0].Values
-		}
+			for _, row := range report.Data.Rows {
+				rowNum++
+				fmt.Println("Parsing row: ", rowNum, row.Dimensions)
+				mets := row.Metrics[0].Values
+				parsedRowp[rowNum] = &ParseReportRow{Dimensions: row.Dimensions, Metrics: mets}
+			}
 
-		parsedRowp := make([]*ParseReportRow, len(report.Data.Rows))
-		for i, row := range report.Data.Rows {
-			mets := row.Metrics[0].Values
-			parsedRowp[i] = &ParseReportRow{Dimensions: row.Dimensions, Metrics: mets}
-		}
-		parsed.Rows = parsedRowp
-
-		// 0 indexed, only last page of results
-		if i == (len(res.Reports) - 1) {
-			pageToken = report.NextPageToken
+			// 0 indexed, only last page of results
+			if i == (len(res.Reports) - 1) {
+				pageToken = report.NextPageToken
+			}
 		}
 	}
+
+	parsed.Rows = parsedRowp
+
+	// js, _ := json.Marshal(parsed)
+	// fmt.Println("parsed: ", string(js))
 
 	return &parsed, pageToken
 

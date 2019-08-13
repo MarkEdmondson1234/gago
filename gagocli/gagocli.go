@@ -122,13 +122,13 @@ func main() {
 		"2019-08-01",
 		"ga:date,ga:sourceMedium",
 		"ga:sessions,ga:users",
-		42,
+		63,
 		false,
 		false)
 
-	for _, r := range report {
-		js, _ := json.Marshal(r)
-		fmt.Println(string(js))
+	js, _ := json.Marshal(report)
+	if js != nil {
+		fmt.Println("out: ", string(js))
 	}
 
 }
