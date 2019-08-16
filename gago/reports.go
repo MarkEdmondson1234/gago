@@ -25,14 +25,15 @@ func GoogleAnalytics(
 	pageLimit = 10
 
 	pageSize = pageLimit
+	maxRows = maxRows - 1 //0 index
 
 	if maxRows < pageLimit {
 		// if first page needs to fetch less than 10k default
-		pageSize = maxRows - 1
+		pageSize = maxRows
 	}
 
 	maxPages := (maxRows / (pageLimit * 5)) + 1
-	reqp := make([]*ga.ReportRequest, 5)
+
 	responses := make([]*ga.GetReportsResponse, maxPages)
 	//parseReportList := make([]*ParseReport, maxPages)
 
@@ -42,9 +43,10 @@ func GoogleAnalytics(
 	fetchMore := true
 
 	for i := 0; fetchMore; i++ {
-		fmt.Println("paging: ", i, fetchMore)
+		//fmt.Println("paging: ", i, fetchMore)
 
 		// a loop around 5 requests
+		reqp := make([]*ga.ReportRequest, 5)
 		for j := range reqp {
 			// fmt.Println("ps", pageSize, " pt", pageToken, " pl", pageLimit, " mr", maxRows, "fr", fetchedRows)
 			req := makeRequest(
@@ -70,12 +72,12 @@ func GoogleAnalytics(
 
 			// do we need to modify pageSize for next loop?
 			if maxRows > 0 && (fetchedRows+pageSize) > maxRows {
-				pageSize = maxRows - fetchedRows
+				pageSize = maxRows - fetchedRows + 1
 			}
 		}
 
 		// fetch requests
-		// assign this for PArsdReotsResponse dones error
+		// responses 1 is same as 0 ?
 		responses[i] = fetchReport(service, reqp, useResourceQuotas)
 
 		// for k, r := range responses {
@@ -85,8 +87,8 @@ func GoogleAnalytics(
 
 	}
 
-	js, _ := json.Marshal(responses)
-	fmt.Println("\n# All Responses:", string(js))
+	//js, _ := json.MarshalIndent(responses, "", " ")
+	//fmt.Println("\n# All Responses:", string(js))
 
 	parseReports, _ := ParseReportsResponse(responses, fetchedRows)
 
@@ -195,9 +197,9 @@ func ParseReportsResponse(responses []*ga.GetReportsResponse, maxRows int64) (pa
 		}
 
 		for i, report := range res.Reports {
-			fmt.Println("parse i:", i)
-			js, _ := json.Marshal(report)
-			fmt.Println(string(js))
+			//fmt.Println("parse i:", i)
+			//js, _ := json.Marshal(report)
+			//fmt.Println(string(js))
 
 			if i == 0 {
 				var metHeaders []*ga.MetricHeaderEntry
@@ -218,10 +220,10 @@ func ParseReportsResponse(responses []*ga.GetReportsResponse, maxRows int64) (pa
 			}
 
 			for _, row := range report.Data.Rows {
-				rowNum++
 				fmt.Println("Parsing row: ", rowNum, row.Dimensions)
 				mets := row.Metrics[0].Values
 				parsedRowp[rowNum] = &ParseReportRow{Dimensions: row.Dimensions, Metrics: mets}
+				rowNum++
 			}
 
 			// 0 indexed, only last page of results
