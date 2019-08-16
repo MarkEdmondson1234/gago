@@ -11,18 +11,37 @@ import (
 	"google.golang.org/api/googleapi"
 )
 
+//GoogleAnalyticsRequest Make a request object to pass to GoogleAnalytics
+type GoogleAnalyticsRequest struct {
+	Service                                 *ga.Service
+	ViewID, Start, End, Dimensions, Metrics string
+	MaxRows, PageLimit                      int64
+	UseResourceQuotas, AntiSample           bool
+	// private?
+}
+
 //GoogleAnalytics Make a request to the v4 Reporting API
-func GoogleAnalytics(
-	service *ga.Service,
-	viewID, start, end, dimensions, metrics string,
-	maxRows int64,
-	useResourceQuotas, antiSample bool) *ParseReport {
+func GoogleAnalytics(gagoRequest GoogleAnalyticsRequest) *ParseReport {
+
+	//func GoogleAnalytics(
+	//	service *ga.Service,
+	//	viewID, start, end, dimensions, metrics string,
+	//	maxRows int64,
+	//	useResourceQuotas, antiSample bool) *ParseReport {
 
 	// init ""
 	var pageToken string
-	var pageSize, pageLimit, fetchedRows int64
-
-	pageLimit = 10
+	var pageSize, pageLimit, fetchedRows, maxRows int64
+	if gagoRequest.MaxRows == 0 {
+		maxRows = 1000
+	} else {
+		maxRows = gagoRequest.MaxRows
+	}
+	if gagoRequest.PageLimit == 0 {
+		pageLimit = 10
+	} else {
+		pageLimit = gagoRequest.PageLimit
+	}
 
 	pageSize = pageLimit
 	maxRows = maxRows - 1 //0 index
@@ -35,7 +54,6 @@ func GoogleAnalytics(
 	maxPages := (maxRows / (pageLimit * 5)) + 1
 
 	responses := make([]*ga.GetReportsResponse, maxPages)
-	//parseReportList := make([]*ParseReport, maxPages)
 
 	fmt.Println("maxPages: ", maxPages)
 
@@ -50,11 +68,11 @@ func GoogleAnalytics(
 		for j := range reqp {
 			// fmt.Println("ps", pageSize, " pt", pageToken, " pl", pageLimit, " mr", maxRows, "fr", fetchedRows)
 			req := makeRequest(
-				viewID,
-				start,
-				end,
-				dimensions,
-				metrics,
+				gagoRequest.ViewID,
+				gagoRequest.Start,
+				gagoRequest.End,
+				gagoRequest.Dimensions,
+				gagoRequest.Metrics,
 				pageSize,
 				pageToken)
 			reqp[j] = req
@@ -77,13 +95,8 @@ func GoogleAnalytics(
 		}
 
 		// fetch requests
-		// responses 1 is same as 0 ?
-		responses[i] = fetchReport(service, reqp, useResourceQuotas)
-
-		// for k, r := range responses {
-		// 	parsedReport, _ := ParseReportsResponse(r)
-		// 	parseReportList[k] = parsedReport
-		// }
+		// TODO: parrallise this
+		responses[i] = fetchReport(gagoRequest.Service, reqp, gagoRequest.UseResourceQuotas)
 
 	}
 
@@ -121,7 +134,6 @@ func makeRequest(
 		metp[i] = &ga.Metric{Expression: met}
 	}
 
-	// TODO: Make multiple requests based on pagesize
 	requests := ga.ReportRequest{}
 	requests.DateRanges = daterangep
 	requests.Dimensions = dimp
@@ -147,8 +159,7 @@ func fetchReport(
 
 	reportreq := &ga.GetReportsRequest{ReportRequests: reports, UseResourceQuotas: useResourceQuotas}
 
-	// TODO: parrallise this
-	// I don't think this deal with more than 5 reportreq's at once
+	// Max 5 reportreq's at once
 	report, err := service.Reports.BatchGet(reportreq).Do()
 	if err != nil {
 		log.Fatal(err)

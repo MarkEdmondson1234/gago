@@ -99,32 +99,22 @@ func main() {
 
 	gago.GetAccountSummary(analyticsService)
 
-	// report := gago.GoogleAnalytics(
-	// 	analyticsreportingService,
-	// 	"81416156",
-	// 	"2019-07-01",
-	// 	"2019-08-01",
-	// 	"ga:date,ga:sourceMedium",
-	// 	"ga:sessions,ga:users",
-	// 	100,
-	// 	false,
-	// 	false)
-
 	// for _, r := range report {
 	// 	js, _ := json.Marshal(r)
 	// 	fmt.Println("Response:", string(js))
 	// }
 
-	report := gago.GoogleAnalytics(
-		analyticsreportingService,
-		"81416156",
-		"2019-07-01",
-		"2019-08-01",
-		"ga:date,ga:sourceMedium",
-		"ga:sessions,ga:users",
-		63,
-		false,
-		false)
+	// a struct so you can not specify all values and leave some as default values
+	var req = gago.GoogleAnalyticsRequest{
+		Service:    analyticsreportingService,
+		ViewID:     "81416156",
+		Start:      "2019-07-01",
+		End:        "2019-08-01",
+		Dimensions: "ga:date,ga:sourceMedium",
+		Metrics:    "ga:sessions,ga:users",
+		MaxRows:    63}
+
+	report := gago.GoogleAnalytics(req)
 
 	js, _ := json.Marshal(report)
 	if js != nil {
