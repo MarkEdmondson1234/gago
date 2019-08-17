@@ -90,6 +90,7 @@ func GoogleAnalytics(gagoRequest GoogleAnalyticsRequest) *ParseReport {
 	concurrentRequests := ((len(requestList) - 1) / concurrencyLimit) + 1
 	fmt.Println("concurrency: ", concurrentRequests)
 
+	responseIndex := 0
 	for i := 0; i < len(requestList); i += concurrencyLimit {
 
 		batch := requestList[i:min(i+concurrencyLimit, len(requestList))]
@@ -100,10 +101,11 @@ func GoogleAnalytics(gagoRequest GoogleAnalyticsRequest) *ParseReport {
 
 		for j, request := range batch {
 			// fetch requests
-			go func(j int, request []*ga.ReportRequest) {
+			go func(j int, request []*ga.ReportRequest, gagoRequest GoogleAnalyticsRequest) {
 				defer wg.Done()
-				responses[j] = fetchReport(gagoRequest, request)
-			}(j, request)
+				responses[responseIndex] = fetchReport(gagoRequest, request)
+				responseIndex++
+			}(j, request, gagoRequest)
 
 		}
 
