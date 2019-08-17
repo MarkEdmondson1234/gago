@@ -17,47 +17,36 @@ type GoogleAnalyticsRequest struct {
 	ViewID, Start, End, Dimensions, Metrics string
 	MaxRows, PageLimit                      int64
 	UseResourceQuotas, AntiSample           bool
-	// private?
+	pageSize, fetchedRows                   int64
+	pageToken                               string
 }
 
 //GoogleAnalytics Make a request to the v4 Reporting API
 func GoogleAnalytics(gagoRequest GoogleAnalyticsRequest) *ParseReport {
 
-	//func GoogleAnalytics(
-	//	service *ga.Service,
-	//	viewID, start, end, dimensions, metrics string,
-	//	maxRows int64,
-	//	useResourceQuotas, antiSample bool) *ParseReport {
-
 	// init ""
-	var pageToken string
-	var pageSize, pageLimit, fetchedRows, maxRows int64
 	if gagoRequest.MaxRows == 0 {
-		maxRows = 1000
-	} else {
-		maxRows = gagoRequest.MaxRows
+		gagoRequest.MaxRows = 1000
 	}
 	if gagoRequest.PageLimit == 0 {
-		pageLimit = 10
-	} else {
-		pageLimit = gagoRequest.PageLimit
+		gagoRequest.PageLimit = 10
 	}
 
-	pageSize = pageLimit
-	maxRows = maxRows - 1 //0 index
+	gagoRequest.pageSize = gagoRequest.PageLimit
+	gagoRequest.MaxRows = gagoRequest.MaxRows - 1 //0 index
 
-	if maxRows < pageLimit {
+	if gagoRequest.MaxRows < gagoRequest.PageLimit {
 		// if first page needs to fetch less than 10k default
-		pageSize = maxRows
+		gagoRequest.pageSize = gagoRequest.MaxRows
 	}
 
-	maxPages := (maxRows / (pageLimit * 5)) + 1
+	maxPages := (gagoRequest.MaxRows / (gagoRequest.PageLimit * 5)) + 1
 
 	responses := make([]*ga.GetReportsResponse, maxPages)
 
 	fmt.Println("maxPages: ", maxPages)
 
-	fetchedRows = 0
+	gagoRequest.fetchedRows = 0
 	fetchMore := true
 
 	requestList := make([][]*ga.ReportRequest, maxPages)
@@ -68,31 +57,32 @@ func GoogleAnalytics(gagoRequest GoogleAnalyticsRequest) *ParseReport {
 		// a loop around 5 requests
 		reqp := make([]*ga.ReportRequest, 5)
 		for j := range reqp {
-			// fmt.Println("ps", pageSize, " pt", pageToken, " pl", pageLimit, " mr", maxRows, "fr", fetchedRows)
+			// fmt.Println("ps", gagoRequest.pageSize, " pt", gagoRequest.pageToken, " pl", gagoRequest.PageLimit, " mr", gagoRequest.MaxRows, "fr", fetchedRows)
 			req := makeRequest(
 				gagoRequest.ViewID,
 				gagoRequest.Start,
 				gagoRequest.End,
 				gagoRequest.Dimensions,
 				gagoRequest.Metrics,
-				pageSize,
-				pageToken)
+				gagoRequest.pageSize,
+				gagoRequest.pageToken)
 			reqp[j] = req
 
-			pageToken = strconv.FormatInt(fetchedRows+pageSize, 10)
-			fetchedRows = fetchedRows + pageSize
+			gagoRequest.pageToken = strconv.FormatInt(gagoRequest.fetchedRows+gagoRequest.pageSize, 10)
+			gagoRequest.fetchedRows = gagoRequest.fetchedRows + gagoRequest.pageSize
 			// stop fetching if no pagetoken
 			// stop fetching if we adjusted the pageSize down
 			// stop fetching if we've reached maxRows
-			if pageSize < pageLimit || (maxRows > 0 && fetchedRows >= maxRows) {
+			if gagoRequest.pageSize < gagoRequest.PageLimit ||
+				(gagoRequest.MaxRows > 0 && gagoRequest.fetchedRows >= gagoRequest.MaxRows) {
 				// fmt.Println("dont fetchmore")
 				fetchMore = false
 				break
 			}
 
 			// do we need to modify pageSize for next loop?
-			if maxRows > 0 && (fetchedRows+pageSize) > maxRows {
-				pageSize = maxRows - fetchedRows + 1
+			if gagoRequest.MaxRows > 0 && (gagoRequest.fetchedRows+gagoRequest.pageSize) > gagoRequest.MaxRows {
+				gagoRequest.pageSize = gagoRequest.MaxRows - gagoRequest.fetchedRows + 1
 			}
 		}
 
@@ -109,7 +99,7 @@ func GoogleAnalytics(gagoRequest GoogleAnalyticsRequest) *ParseReport {
 	//js, _ := json.MarshalIndent(responses, "", " ")
 	//fmt.Println("\n# All Responses:", string(js))
 
-	parseReports, _ := ParseReportsResponse(responses, fetchedRows)
+	parseReports, _ := ParseReportsResponse(responses, gagoRequest.fetchedRows)
 
 	return parseReports
 
