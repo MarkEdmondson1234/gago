@@ -60,6 +60,8 @@ func GoogleAnalytics(gagoRequest GoogleAnalyticsRequest) *ParseReport {
 	fetchedRows = 0
 	fetchMore := true
 
+	requestList := make([][]*ga.ReportRequest, maxPages)
+
 	for i := 0; fetchMore; i++ {
 		//fmt.Println("paging: ", i, fetchMore)
 
@@ -94,10 +96,14 @@ func GoogleAnalytics(gagoRequest GoogleAnalyticsRequest) *ParseReport {
 			}
 		}
 
+		requestList[i] = reqp
+
+	}
+
+	for i, request := range requestList {
 		// fetch requests
 		// TODO: parrallise this
-		responses[i] = fetchReport(gagoRequest.Service, reqp, gagoRequest.UseResourceQuotas)
-
+		responses[i] = fetchReport(gagoRequest.Service, request, gagoRequest.UseResourceQuotas)
 	}
 
 	//js, _ := json.MarshalIndent(responses, "", " ")
