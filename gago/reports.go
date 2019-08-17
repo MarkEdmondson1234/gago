@@ -6,6 +6,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"sync"
 
 	ga "google.golang.org/api/analyticsreporting/v4"
 	"google.golang.org/api/googleapi"
@@ -84,22 +85,27 @@ func GoogleAnalytics(gagoRequest GoogleAnalyticsRequest) *ParseReport {
 	}
 
 	// https://medium.com/@greenraccoon23/multi-thread-for-loops-easily-and-safely-in-go-a2e915302f8b
-	// var wg sync.WaitGroup
-	// wg.Add(10)
+	var wg sync.WaitGroup
+
+	if len(requestList) > 10 {
+		wg.Add(10)
+	} else {
+		wg.Add(len(requestList))
+	}
+
 	// responseChannel := make(chan *ga.GetReportsResponse, 10)
 	for i, request := range requestList {
 		// fetch requests
 		// TODO: parrallise this
-		// go func(i int, request []*ga.ReportRequest) {
-		// 	defer wg.Done()
-		//responses[i] = fetchReport(gagoRequest.Service, request, gagoRequest.UseResourceQuotas)
-		responses[i] = fetchReport(gagoRequest, request)
-		//responseChannel <- fetchReport(gagoRequest.Service, request, gagoRequest.UseResourceQuotas)
-		//}(i, request)
+		go func(i int, request []*ga.ReportRequest) {
+			defer wg.Done()
+			responses[i] = fetchReport(gagoRequest, request)
+			//responseChannel <- fetchReport(gagoRequest.Service, request, gagoRequest.UseResourceQuotas)
+		}(i, request)
 
 	}
 
-	// wg.Wait()
+	wg.Wait()
 	// close(responseChannel)
 
 	//js, _ := json.MarshalIndent(responses, "", " ")
