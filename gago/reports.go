@@ -30,7 +30,7 @@ func GoogleAnalytics(gagoRequest GoogleAnalyticsRequest) *ParseReport {
 		gagoRequest.MaxRows = 1000
 	}
 	if gagoRequest.PageLimit == 0 {
-		gagoRequest.PageLimit = 10
+		gagoRequest.PageLimit = 2
 	}
 
 	gagoRequest.pageSize = gagoRequest.PageLimit
@@ -84,37 +84,47 @@ func GoogleAnalytics(gagoRequest GoogleAnalyticsRequest) *ParseReport {
 
 	}
 
-	// https://medium.com/@greenraccoon23/multi-thread-for-loops-easily-and-safely-in-go-a2e915302f8b
-	var wg sync.WaitGroup
+	// 10 concurrent requests per view (profile) (cannot be increased)
+	// 1- 1-10, 2 - 11-20 etc.
+	concurrencyLimit := 10
+	concurrentRequests := ((len(requestList) - 1) / concurrencyLimit) + 1
+	fmt.Println("concurrency: ", concurrentRequests)
 
-	if len(requestList) > 10 {
-		wg.Add(10)
-	} else {
-		wg.Add(len(requestList))
+	for i := 0; i < len(requestList); i += concurrencyLimit {
+
+		batch := requestList[i:min(i+concurrencyLimit, len(requestList))]
+		var wg sync.WaitGroup
+		fmt.Println("batch size:", len(batch))
+
+		wg.Add(len(batch))
+
+		for j, request := range batch {
+			// fetch requests
+			go func(j int, request []*ga.ReportRequest) {
+				defer wg.Done()
+				responses[j] = fetchReport(gagoRequest, request)
+			}(j, request)
+
+		}
+
+		wg.Wait()
+
 	}
 
-	// responseChannel := make(chan *ga.GetReportsResponse, 10)
-	for i, request := range requestList {
-		// fetch requests
-		// TODO: parrallise this
-		go func(i int, request []*ga.ReportRequest) {
-			defer wg.Done()
-			responses[i] = fetchReport(gagoRequest, request)
-			//responseChannel <- fetchReport(gagoRequest.Service, request, gagoRequest.UseResourceQuotas)
-		}(i, request)
-
-	}
-
-	wg.Wait()
-	// close(responseChannel)
-
-	//js, _ := json.MarshalIndent(responses, "", " ")
-	//fmt.Println("\n# All Responses:", string(js))
+	js, _ := json.MarshalIndent(responses, "", " ")
+	fmt.Println("\n# All Responses:", string(js))
 
 	parseReports, _ := ParseReportsResponse(responses, gagoRequest.fetchedRows)
 
 	return parseReports
 
+}
+
+func min(a, b int) int {
+	if a <= b {
+		return a
+	}
+	return b
 }
 
 //func worker(service *ga.Service)
@@ -162,10 +172,10 @@ func makeRequest(gagoRequest GoogleAnalyticsRequest) *ga.ReportRequest {
 func fetchReport(
 	gagoRequest GoogleAnalyticsRequest,
 	reports []*ga.ReportRequest) *ga.GetReportsResponse {
-	// func fetchReport(
-	// 	service *ga.Service,
-	// 	reports []*ga.ReportRequest,
-	// 	useResourceQuotas bool) *ga.GetReportsResponse {
+
+	fmt.Println("fetching: pt", gagoRequest.pageToken,
+		"ps:", gagoRequest.pageSize,
+		"fr:", gagoRequest.fetchedRows)
 
 	reportreq := &ga.GetReportsRequest{ReportRequests: reports, UseResourceQuotas: gagoRequest.UseResourceQuotas}
 
@@ -175,8 +185,8 @@ func fetchReport(
 		log.Fatal(err)
 	}
 
-	js, _ := json.Marshal(report)
-	fmt.Println("\n## fetched ", string(js))
+	//js, _ := json.Marshal(report)
+	//fmt.Println("\n## fetched ", string(js))
 
 	return report
 

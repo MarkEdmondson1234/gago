@@ -105,6 +105,15 @@ func main() {
 	// }
 
 	// a struct so you can not specify all values and leave some as default values
+	// var req = gago.GoogleAnalyticsRequest{
+	// 	Service:    analyticsreportingService,
+	// 	ViewID:     "81416156",
+	// 	Start:      "2019-07-01",
+	// 	End:        "2019-08-01",
+	// 	Dimensions: "ga:date,ga:sourceMedium",
+	// 	Metrics:    "ga:sessions,ga:users",
+	// 	MaxRows:    63}
+
 	var req = gago.GoogleAnalyticsRequest{
 		Service:    analyticsreportingService,
 		ViewID:     "81416156",
@@ -112,7 +121,7 @@ func main() {
 		End:        "2019-08-01",
 		Dimensions: "ga:date,ga:sourceMedium",
 		Metrics:    "ga:sessions,ga:users",
-		MaxRows:    63}
+		MaxRows:    120}
 
 	report := gago.GoogleAnalytics(req)
 
