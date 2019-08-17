@@ -58,19 +58,12 @@ func GoogleAnalytics(gagoRequest GoogleAnalyticsRequest) *ParseReport {
 		reqp := make([]*ga.ReportRequest, 5)
 		for j := range reqp {
 			// fmt.Println("ps", gagoRequest.pageSize, " pt", gagoRequest.pageToken, " pl", gagoRequest.PageLimit, " mr", gagoRequest.MaxRows, "fr", fetchedRows)
-			req := makeRequest(
-				gagoRequest.ViewID,
-				gagoRequest.Start,
-				gagoRequest.End,
-				gagoRequest.Dimensions,
-				gagoRequest.Metrics,
-				gagoRequest.pageSize,
-				gagoRequest.pageToken)
+			req := makeRequest(gagoRequest)
 			reqp[j] = req
 
 			gagoRequest.pageToken = strconv.FormatInt(gagoRequest.fetchedRows+gagoRequest.pageSize, 10)
 			gagoRequest.fetchedRows = gagoRequest.fetchedRows + gagoRequest.pageSize
-			// stop fetching if no pagetoken
+
 			// stop fetching if we adjusted the pageSize down
 			// stop fetching if we've reached maxRows
 			if gagoRequest.pageSize < gagoRequest.PageLimit ||
@@ -90,11 +83,24 @@ func GoogleAnalytics(gagoRequest GoogleAnalyticsRequest) *ParseReport {
 
 	}
 
+	// https://medium.com/@greenraccoon23/multi-thread-for-loops-easily-and-safely-in-go-a2e915302f8b
+	// var wg sync.WaitGroup
+	// wg.Add(10)
+	// responseChannel := make(chan *ga.GetReportsResponse, 10)
 	for i, request := range requestList {
 		// fetch requests
 		// TODO: parrallise this
-		responses[i] = fetchReport(gagoRequest.Service, request, gagoRequest.UseResourceQuotas)
+		// go func(i int, request []*ga.ReportRequest) {
+		// 	defer wg.Done()
+		//responses[i] = fetchReport(gagoRequest.Service, request, gagoRequest.UseResourceQuotas)
+		responses[i] = fetchReport(gagoRequest, request)
+		//responseChannel <- fetchReport(gagoRequest.Service, request, gagoRequest.UseResourceQuotas)
+		//}(i, request)
+
 	}
+
+	// wg.Wait()
+	// close(responseChannel)
 
 	//js, _ := json.MarshalIndent(responses, "", " ")
 	//fmt.Println("\n# All Responses:", string(js))
@@ -105,26 +111,25 @@ func GoogleAnalytics(gagoRequest GoogleAnalyticsRequest) *ParseReport {
 
 }
 
+//func worker(service *ga.Service)
+
 //makeRequest creates the request(s) for fetchReport
 // start and end are YYYY-mm-dd
 // dimensions and metrics are ga:dim1,ga:dim2 and ga:metric1,ga:metric2
-func makeRequest(
-	viewID, start, end, dimensions, metrics string,
-	pageSize int64,
-	pageToken string) *ga.ReportRequest {
+func makeRequest(gagoRequest GoogleAnalyticsRequest) *ga.ReportRequest {
 
 	// slice of length 1 of type *ga.DateRange
 	daterangep := make([]*ga.DateRange, 1)
 	// Fill the 1st element with a pointer to a ga.DateRange
-	daterangep[0] = &ga.DateRange{StartDate: start, EndDate: end}
+	daterangep[0] = &ga.DateRange{StartDate: gagoRequest.Start, EndDate: gagoRequest.End}
 
-	dimSplit := strings.Split(dimensions, ",")
+	dimSplit := strings.Split(gagoRequest.Dimensions, ",")
 	dimp := make([]*ga.Dimension, len(dimSplit))
 	for i, dim := range dimSplit {
 		dimp[i] = &ga.Dimension{Name: dim}
 	}
 
-	metSplit := strings.Split(metrics, ",")
+	metSplit := strings.Split(gagoRequest.Metrics, ",")
 	metp := make([]*ga.Metric, len(metSplit))
 	for i, met := range metSplit {
 		metp[i] = &ga.Metric{Expression: met}
@@ -135,10 +140,10 @@ func makeRequest(
 	requests.Dimensions = dimp
 	requests.Metrics = metp
 	requests.IncludeEmptyRows = true
-	requests.PageSize = pageSize
-	requests.ViewId = viewID
+	requests.PageSize = gagoRequest.pageSize
+	requests.ViewId = gagoRequest.ViewID
 	requests.SamplingLevel = "LARGE"
-	requests.PageToken = pageToken
+	requests.PageToken = gagoRequest.pageToken
 
 	// print out json request
 	js, _ := requests.MarshalJSON()
@@ -149,14 +154,17 @@ func makeRequest(
 
 // FetchReport Perform the GAv4 API request
 func fetchReport(
-	service *ga.Service,
-	reports []*ga.ReportRequest,
-	useResourceQuotas bool) *ga.GetReportsResponse {
+	gagoRequest GoogleAnalyticsRequest,
+	reports []*ga.ReportRequest) *ga.GetReportsResponse {
+	// func fetchReport(
+	// 	service *ga.Service,
+	// 	reports []*ga.ReportRequest,
+	// 	useResourceQuotas bool) *ga.GetReportsResponse {
 
-	reportreq := &ga.GetReportsRequest{ReportRequests: reports, UseResourceQuotas: useResourceQuotas}
+	reportreq := &ga.GetReportsRequest{ReportRequests: reports, UseResourceQuotas: gagoRequest.UseResourceQuotas}
 
 	// Max 5 reportreq's at once
-	report, err := service.Reports.BatchGet(reportreq).Do()
+	report, err := gagoRequest.Service.Reports.BatchGet(reportreq).Do()
 	if err != nil {
 		log.Fatal(err)
 	}
