@@ -1,7 +1,6 @@
 package gago
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"strconv"
@@ -87,15 +86,13 @@ func GoogleAnalytics(gagoRequest GoogleAnalyticsRequest) *ParseReport {
 	// 10 concurrent requests per view (profile) (cannot be increased)
 	// 1- 1-10, 2 - 11-20 etc.
 	concurrencyLimit := 10
-	concurrentRequests := ((len(requestList) - 1) / concurrencyLimit) + 1
-	fmt.Println("concurrency: ", concurrentRequests)
 
 	responseIndex := 0
 	for i := 0; i < len(requestList); i += concurrencyLimit {
 
 		batch := requestList[i:min(i+concurrencyLimit, len(requestList))]
 		var wg sync.WaitGroup
-		fmt.Println("batch size:", len(batch))
+		fmt.Println("api concurrency size:", len(batch))
 
 		wg.Add(len(batch))
 
@@ -113,8 +110,8 @@ func GoogleAnalytics(gagoRequest GoogleAnalyticsRequest) *ParseReport {
 
 	}
 
-	js, _ := json.MarshalIndent(responses, "", " ")
-	fmt.Println("\n# All Responses:", string(js))
+	//js, _ := json.MarshalIndent(responses, "", " ")
+	//fmt.Println("\n# All Responses:", string(js))
 
 	parseReports, _ := ParseReportsResponse(responses, gagoRequest.fetchedRows)
 
@@ -174,10 +171,6 @@ func makeRequest(gagoRequest GoogleAnalyticsRequest) *ga.ReportRequest {
 func fetchReport(
 	gagoRequest GoogleAnalyticsRequest,
 	reports []*ga.ReportRequest) *ga.GetReportsResponse {
-
-	fmt.Println("fetching: pt", gagoRequest.pageToken,
-		"ps:", gagoRequest.pageSize,
-		"fr:", gagoRequest.fetchedRows)
 
 	reportreq := &ga.GetReportsRequest{ReportRequests: reports, UseResourceQuotas: gagoRequest.UseResourceQuotas}
 
