@@ -2,14 +2,13 @@ package gago
 
 import (
 	"fmt"
-	"log"
-	"strconv"
-	"strings"
-	"sync"
 
 	ga "google.golang.org/api/analyticsreporting/v4"
 	"google.golang.org/api/googleapi"
 )
+
+const concurrencyLimit = 10
+const apiBatchLimit = 5
 
 //GoogleAnalyticsRequest Make a request object to pass to GoogleAnalytics
 type GoogleAnalyticsRequest struct {
@@ -17,7 +16,7 @@ type GoogleAnalyticsRequest struct {
 	ViewID, Start, End, Dimensions, Metrics string
 	MaxRows, PageLimit                      int64
 	UseResourceQuotas, AntiSample           bool
-	pageSize, fetchedRows                   int64
+	pageSize, fetchedRows, maxPages         int64
 	pageToken                               string
 }
 
@@ -29,7 +28,7 @@ func GoogleAnalytics(gagoRequest GoogleAnalyticsRequest) *ParseReport {
 		gagoRequest.MaxRows = 1000
 	}
 	if gagoRequest.PageLimit == 0 {
-		gagoRequest.PageLimit = 2
+		gagoRequest.PageLimit = 10000
 	}
 
 	gagoRequest.pageSize = gagoRequest.PageLimit
@@ -40,150 +39,21 @@ func GoogleAnalytics(gagoRequest GoogleAnalyticsRequest) *ParseReport {
 		gagoRequest.pageSize = gagoRequest.MaxRows
 	}
 
-	maxPages := (gagoRequest.MaxRows / (gagoRequest.PageLimit * 5)) + 1
-
-	responses := make([]*ga.GetReportsResponse, maxPages)
-
-	fmt.Println("maxPages: ", maxPages)
-
-	gagoRequest.fetchedRows = 0
-	fetchMore := true
-
-	requestList := make([][]*ga.ReportRequest, maxPages)
-
-	for i := 0; fetchMore; i++ {
-		//fmt.Println("paging: ", i, fetchMore)
-
-		// a loop around 5 requests
-		reqp := make([]*ga.ReportRequest, 5)
-		for j := range reqp {
-			// fmt.Println("ps", gagoRequest.pageSize, " pt", gagoRequest.pageToken, " pl", gagoRequest.PageLimit, " mr", gagoRequest.MaxRows, "fr", fetchedRows)
-			req := makeRequest(gagoRequest)
-			reqp[j] = req
-
-			gagoRequest.pageToken = strconv.FormatInt(gagoRequest.fetchedRows+gagoRequest.pageSize, 10)
-			gagoRequest.fetchedRows = gagoRequest.fetchedRows + gagoRequest.pageSize
-
-			// stop fetching if we adjusted the pageSize down
-			// stop fetching if we've reached maxRows
-			if gagoRequest.pageSize < gagoRequest.PageLimit ||
-				(gagoRequest.MaxRows > 0 && gagoRequest.fetchedRows >= gagoRequest.MaxRows) {
-				// fmt.Println("dont fetchmore")
-				fetchMore = false
-				break
-			}
-
-			// do we need to modify pageSize for next loop?
-			if gagoRequest.MaxRows > 0 && (gagoRequest.fetchedRows+gagoRequest.pageSize) > gagoRequest.MaxRows {
-				gagoRequest.pageSize = gagoRequest.MaxRows - gagoRequest.fetchedRows + 1
-			}
-		}
-
-		requestList[i] = reqp
-
+	var requestList [][]*ga.ReportRequest
+	if gagoRequest.AntiSample {
+		requestList = makeAntiSampleRequestList(&gagoRequest)
+	} else {
+		requestList = makeRequestList(&gagoRequest)
 	}
 
-	// 10 concurrent requests per view (profile) (cannot be increased)
-	// 1- 1-10, 2 - 11-20 etc.
-	concurrencyLimit := 10
-
-	responseIndex := 0
-	for i := 0; i < len(requestList); i += concurrencyLimit {
-
-		batch := requestList[i:min(i+concurrencyLimit, len(requestList))]
-		var wg sync.WaitGroup
-		fmt.Println("api concurrency size:", len(batch))
-
-		wg.Add(len(batch))
-
-		for j, request := range batch {
-			// fetch requests
-			go func(j int, request []*ga.ReportRequest, gagoRequest GoogleAnalyticsRequest) {
-				defer wg.Done()
-				responses[responseIndex] = fetchReport(gagoRequest, request)
-				responseIndex++
-			}(j, request, gagoRequest)
-
-		}
-
-		wg.Wait()
-
-	}
+	responses := fetchConcurrentReport(requestList, gagoRequest)
 
 	//js, _ := json.MarshalIndent(responses, "", " ")
 	//fmt.Println("\n# All Responses:", string(js))
 
-	parseReports, _ := ParseReportsResponse(responses, gagoRequest.fetchedRows)
+	parseReports, _ := parseReportsResponse(responses, gagoRequest.fetchedRows)
 
 	return parseReports
-
-}
-
-func min(a, b int) int {
-	if a <= b {
-		return a
-	}
-	return b
-}
-
-//func worker(service *ga.Service)
-
-//makeRequest creates the request(s) for fetchReport
-// start and end are YYYY-mm-dd
-// dimensions and metrics are ga:dim1,ga:dim2 and ga:metric1,ga:metric2
-func makeRequest(gagoRequest GoogleAnalyticsRequest) *ga.ReportRequest {
-
-	// slice of length 1 of type *ga.DateRange
-	daterangep := make([]*ga.DateRange, 1)
-	// Fill the 1st element with a pointer to a ga.DateRange
-	daterangep[0] = &ga.DateRange{StartDate: gagoRequest.Start, EndDate: gagoRequest.End}
-
-	dimSplit := strings.Split(gagoRequest.Dimensions, ",")
-	dimp := make([]*ga.Dimension, len(dimSplit))
-	for i, dim := range dimSplit {
-		dimp[i] = &ga.Dimension{Name: dim}
-	}
-
-	metSplit := strings.Split(gagoRequest.Metrics, ",")
-	metp := make([]*ga.Metric, len(metSplit))
-	for i, met := range metSplit {
-		metp[i] = &ga.Metric{Expression: met}
-	}
-
-	requests := ga.ReportRequest{}
-	requests.DateRanges = daterangep
-	requests.Dimensions = dimp
-	requests.Metrics = metp
-	requests.IncludeEmptyRows = true
-	requests.PageSize = gagoRequest.pageSize
-	requests.ViewId = gagoRequest.ViewID
-	requests.SamplingLevel = "LARGE"
-	requests.PageToken = gagoRequest.pageToken
-
-	// print out json request
-	js, _ := requests.MarshalJSON()
-	fmt.Println("\n# Request:", string(js))
-
-	return &requests
-}
-
-// FetchReport Perform the GAv4 API request
-func fetchReport(
-	gagoRequest GoogleAnalyticsRequest,
-	reports []*ga.ReportRequest) *ga.GetReportsResponse {
-
-	reportreq := &ga.GetReportsRequest{ReportRequests: reports, UseResourceQuotas: gagoRequest.UseResourceQuotas}
-
-	// Max 5 reportreq's at once
-	report, err := gagoRequest.Service.Reports.BatchGet(reportreq).Do()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	//js, _ := json.Marshal(report)
-	//fmt.Println("\n## fetched ", string(js))
-
-	return report
 
 }
 
@@ -209,7 +79,7 @@ type ParseReport struct {
 }
 
 // ParseReportsResponse turns ga.GetReportsResponse into ParseReport
-func ParseReportsResponse(responses []*ga.GetReportsResponse, maxRows int64) (parsedReport *ParseReport, pageToken string) {
+func parseReportsResponse(responses []*ga.GetReportsResponse, maxRows int64) (parsedReport *ParseReport, pageToken string) {
 
 	parsed := ParseReport{}
 	parsedRowp := make([]*ParseReportRow, maxRows+1)
