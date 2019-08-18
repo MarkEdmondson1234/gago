@@ -32,7 +32,7 @@ func GoogleAnalytics(gagoRequest GoogleAnalyticsRequest) *ParseReport {
 	}
 
 	gagoRequest.pageSize = gagoRequest.PageLimit
-	gagoRequest.MaxRows = gagoRequest.MaxRows - 1 //0 index
+	//gagoRequest.MaxRows = gagoRequest.MaxRows - 1 //0 index
 
 	if gagoRequest.MaxRows < gagoRequest.PageLimit {
 		// if first page needs to fetch less than 10k default
@@ -51,7 +51,7 @@ func GoogleAnalytics(gagoRequest GoogleAnalyticsRequest) *ParseReport {
 	//js, _ := json.MarshalIndent(responses, "", " ")
 	//fmt.Println("\n# All Responses:", string(js))
 
-	parseReports, _ := parseReportsResponse(responses, gagoRequest.fetchedRows)
+	parseReports, _ := parseReportsResponse(responses, gagoRequest)
 
 	return parseReports
 
@@ -79,12 +79,12 @@ type ParseReport struct {
 }
 
 // ParseReportsResponse turns ga.GetReportsResponse into ParseReport
-func parseReportsResponse(responses []*ga.GetReportsResponse, maxRows int64) (parsedReport *ParseReport, pageToken string) {
+func parseReportsResponse(responses []*ga.GetReportsResponse, gagoRequest GoogleAnalyticsRequest) (parsedReport *ParseReport, pageToken string) {
 
 	parsed := ParseReport{}
-	parsedRowp := make([]*ParseReportRow, maxRows+1)
+	parsedRowp := make([]*ParseReportRow, gagoRequest.fetchedRows)
 	rowNum := 0
-	fmt.Println("rows to fetch: ", maxRows)
+	fmt.Println("rows to fetch: ", gagoRequest.fetchedRows)
 
 	for _, res := range responses {
 
@@ -116,7 +116,7 @@ func parseReportsResponse(responses []*ga.GetReportsResponse, maxRows int64) (pa
 			}
 
 			for _, row := range report.Data.Rows {
-				fmt.Println("Parsing row: ", rowNum, row.Dimensions)
+				//fmt.Println("Parsing row: ", rowNum, row.Dimensions)
 				mets := row.Metrics[0].Values
 				parsedRowp[rowNum] = &ParseReportRow{Dimensions: row.Dimensions, Metrics: mets}
 				rowNum++
@@ -130,6 +130,8 @@ func parseReportsResponse(responses []*ga.GetReportsResponse, maxRows int64) (pa
 	}
 
 	parsed.Rows = parsedRowp
+
+	//order rows?
 
 	// js, _ := json.Marshal(parsed)
 	// fmt.Println("parsed: ", string(js))

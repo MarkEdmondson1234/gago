@@ -125,10 +125,10 @@ func main() {
 
 	var req = gago.GoogleAnalyticsRequest{
 		Service:    analyticsreportingService,
-		ViewID:     "81416156",
-		Start:      "2019-07-01",
+		ViewID:     "106249469",
+		Start:      "2016-07-01",
 		End:        "2019-08-01",
-		Dimensions: "ga:date,ga:sourceMedium",
+		Dimensions: "ga:date,ga:sourceMedium,ga:landingPagePath,ga:source,ga:hour,ga:minute,ga:eventCategory",
 		Metrics:    "ga:sessions,ga:users",
 		MaxRows:    120,
 		AntiSample: true}

@@ -12,7 +12,7 @@ import (
 
 func makeRequestList(gagoRequest *GoogleAnalyticsRequest) [][]*ga.ReportRequest {
 
-	gagoRequest.maxPages = (gagoRequest.MaxRows / (gagoRequest.PageLimit * 5)) + 1
+	gagoRequest.maxPages = (gagoRequest.MaxRows / (gagoRequest.PageLimit * apiBatchLimit)) + 1
 	fmt.Println("maxPages: ", gagoRequest.maxPages)
 
 	requestList := make([][]*ga.ReportRequest, gagoRequest.maxPages)
@@ -57,6 +57,8 @@ func fetchConcurrentReport(requestList [][]*ga.ReportRequest, gagoRequest Google
 	// 10 concurrent requests per view (profile) (cannot be increased)
 	// 1- 1-10, 2 - 11-20 etc.
 	responses := make([]*ga.GetReportsResponse, gagoRequest.maxPages)
+
+	fmt.Println("maxPages: ", gagoRequest.maxPages)
 
 	responseIndex := 0
 	for i := 0; i < len(requestList); i += concurrencyLimit {
