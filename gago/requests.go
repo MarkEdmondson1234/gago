@@ -24,7 +24,8 @@ func makeRequestList(gagoRequest *GoogleAnalyticsRequest) [][]*ga.ReportRequest 
 		// a loop around 5 requests
 		reqp := make([]*ga.ReportRequest, apiBatchLimit)
 		for j := range reqp {
-			// fmt.Println("ps", gagoRequest.pageSize, " pt", gagoRequest.pageToken, " pl", gagoRequest.PageLimit, " mr", gagoRequest.MaxRows, "fr", fetchedRows)
+			//fmt.Println("ps", gagoRequest.pageSize, " pt", gagoRequest.pageToken, " pl",
+			//	gagoRequest.PageLimit, " mr", gagoRequest.MaxRows, "fr", gagoRequest.fetchedRows)
 			req := makeRequest(*gagoRequest)
 			reqp[j] = req
 
@@ -35,7 +36,7 @@ func makeRequestList(gagoRequest *GoogleAnalyticsRequest) [][]*ga.ReportRequest 
 			// stop fetching if we've reached maxRows
 			if gagoRequest.pageSize < gagoRequest.PageLimit ||
 				(gagoRequest.MaxRows > 0 && gagoRequest.fetchedRows >= gagoRequest.MaxRows) {
-				// fmt.Println("dont fetchmore")
+				fmt.Println("dont fetchmore")
 				fetchMore = false
 				break
 			}
@@ -60,9 +61,12 @@ func fetchConcurrentReport(requestList [][]*ga.ReportRequest, gagoRequest Google
 
 	fmt.Println("maxPages: ", gagoRequest.maxPages)
 
+	//fmt.Println("requestList>", requestList)
+
 	responseIndex := 0
 	for i := 0; i < len(requestList); i += concurrencyLimit {
 
+		//fmt.Println("batch: ", i, min(i+concurrencyLimit, len(requestList)))
 		batch := requestList[i:min(i+concurrencyLimit, len(requestList))]
 		var wg sync.WaitGroup
 		fmt.Println("api concurrency size:", len(batch))
@@ -70,18 +74,31 @@ func fetchConcurrentReport(requestList [][]*ga.ReportRequest, gagoRequest Google
 		wg.Add(len(batch))
 
 		for j, request := range batch {
+			//fmt.Println("j", j, "request", request)
 			// fetch requests
-			go func(j int, request []*ga.ReportRequest, gagoRequest GoogleAnalyticsRequest) {
+			go func(j int, request []*ga.ReportRequest, gagoRequest GoogleAnalyticsRequest, responseIndex int) {
 				defer wg.Done()
 				responses[responseIndex] = fetchReport(gagoRequest, request)
-				responseIndex++
-			}(j, request, gagoRequest)
-
+				//fmt.Println("responseIndex: ", responseIndex)
+			}(j, request, gagoRequest, responseIndex)
+			responseIndex++
 		}
 
 		wg.Wait()
 
 	}
+
+	// fmt.Println("responseIndex", responseIndex)
+	// for _, res := range responses {
+	// 	//fmt.Println("response i>", i)
+	// 	if res == nil {
+	// 		fmt.Println("res=nil")
+	// 		continue
+	// 	}
+	// 	for _, report := range res.Reports {
+	// 		fmt.Println(report.Data.RowCount)
+	// 	}
+	// }
 
 	return responses
 }
@@ -136,6 +153,10 @@ func fetchReport(
 	report, err := gagoRequest.Service.Reports.BatchGet(reportreq).Do()
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	if report == nil {
+		log.Fatal("Nil report:", reportreq)
 	}
 
 	//js, _ := json.Marshal(report)

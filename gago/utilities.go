@@ -19,6 +19,16 @@ func deleteEmptyStringSlice(s []string) []string {
 	return r
 }
 
+func deleteEmptyRowSlice(s []*ParseReportRow) []*ParseReportRow {
+	var r []*ParseReportRow
+	for _, str := range s {
+		if str != nil {
+			r = append(r, str)
+		}
+	}
+	return r
+}
+
 func join(strs ...string) string {
 	var sb strings.Builder
 	for _, str := range strs {

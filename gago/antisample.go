@@ -32,8 +32,8 @@ func makeAntiSampleRequestList(gagoRequest *GoogleAnalyticsRequest) [][]*ga.Repo
 	}
 
 	// update maxPages in request
-	gagoRequest.maxPages = testResponse.RowCount/gagoRequest.pageSize + 1
-	gagoRequest.fetchedRows = testResponse.RowCount
+	gagoRequest.maxPages = 1000000/gagoRequest.PageLimit + 1
+	gagoRequest.fetchedRows = testResponse.RowCount + 1
 
 	readCounts := float64(testResponse.SamplesReadCounts[0])
 	samplingSize := float64(testResponse.SamplingSpaceSizes[0])
@@ -107,9 +107,10 @@ func makeAntiSampleRequestList(gagoRequest *GoogleAnalyticsRequest) [][]*ga.Repo
 			End:        newEndDates[i],
 			Dimensions: gagoRequest.Dimensions,
 			Metrics:    gagoRequest.Metrics,
-			MaxRows:    0, // antisampling always gets all rows
+			MaxRows:    999999, // antisampling always gets all rows
 			PageLimit:  gagoRequest.PageLimit,
 			maxPages:   gagoRequest.maxPages,
+			pageSize:   gagoRequest.PageLimit,
 		}
 
 		// create new ga.ReportRequests
@@ -119,15 +120,20 @@ func makeAntiSampleRequestList(gagoRequest *GoogleAnalyticsRequest) [][]*ga.Repo
 
 	}
 
+	//fmt.Println("antiSampleRequests>", antiSampleRequests)
+
 	outputList := make([][]*analyticsreporting.ReportRequest, totalRequests)
+
 	//remove one level of nesting
-	for i, ll := range antiSampleRequests {
+	tr := 0
+	for _, ll := range antiSampleRequests {
 		for _, lll := range ll {
-			outputList[i] = lll
+			outputList[tr] = lll
+			tr++
 		}
 	}
 
-	fmt.Println("total requests: ", totalRequests, " outputList: ", len(outputList))
+	fmt.Println("total requests: ", totalRequests, " outputList: ", len(outputList), "tr: ", tr)
 
 	// return
 	return outputList

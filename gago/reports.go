@@ -18,21 +18,39 @@ type GoogleAnalyticsRequest struct {
 	UseResourceQuotas, AntiSample           bool
 	pageSize, fetchedRows, maxPages         int64
 	pageToken                               string
+	fetchAll                                bool
 }
 
 //GoogleAnalytics Make a request to the v4 Reporting API
 func GoogleAnalytics(gagoRequest GoogleAnalyticsRequest) *ParseReport {
 
 	// init ""
-	if gagoRequest.MaxRows == 0 {
-		gagoRequest.MaxRows = 1000
-	}
 	if gagoRequest.PageLimit == 0 {
 		gagoRequest.PageLimit = 10000
 	}
 
+	if gagoRequest.MaxRows == 0 {
+		// need to do one fetch to see actual number of rows
+		test := GoogleAnalyticsRequest{
+			Service:    gagoRequest.Service,
+			ViewID:     gagoRequest.ViewID,
+			Start:      gagoRequest.Start,
+			End:        gagoRequest.End,
+			Dimensions: gagoRequest.Dimensions,
+			Metrics:    gagoRequest.Metrics,
+			MaxRows:    gagoRequest.PageLimit}
+		testResponse := GoogleAnalytics(test)
+
+		if gagoRequest.PageLimit > testResponse.RowCount {
+			// we are done, return response
+			return testResponse
+		}
+
+		gagoRequest.MaxRows = testResponse.RowCount
+		gagoRequest.fetchAll = true
+	}
+
 	gagoRequest.pageSize = gagoRequest.PageLimit
-	//gagoRequest.MaxRows = gagoRequest.MaxRows - 1 //0 index
 
 	if gagoRequest.MaxRows < gagoRequest.PageLimit {
 		// if first page needs to fetch less than 10k default
@@ -82,11 +100,35 @@ type ParseReport struct {
 func parseReportsResponse(responses []*ga.GetReportsResponse, gagoRequest GoogleAnalyticsRequest) (parsedReport *ParseReport, pageToken string) {
 
 	parsed := ParseReport{}
-	parsedRowp := make([]*ParseReportRow, gagoRequest.fetchedRows)
+
+	// get actual rows returned
+	var actualRows int64
+	for i, res := range responses {
+		if res == nil {
+			//fmt.Println("empty response")
+			continue
+		}
+		for _, report := range res.Reports {
+			if i == 0 {
+				fmt.Println("row count", report.Data.RowCount)
+				fmt.Println("actualRows", actualRows)
+				actualRows += report.Data.RowCount
+			}
+		}
+
+	}
+
+	parsedRowp := make([]*ParseReportRow, actualRows)
 	rowNum := 0
-	fmt.Println("rows to fetch: ", gagoRequest.fetchedRows)
+	fmt.Println("rows to fetch: ", actualRows)
 
 	for _, res := range responses {
+
+		if res == nil {
+			//fmt.Println("empty response")
+			continue
+
+		}
 
 		if res.QueryCost > 0 {
 			fmt.Println("QueryCost: ", res.QueryCost, " ResourcesQuotasRemaining: ", res.ResourceQuotasRemaining)
@@ -109,7 +151,7 @@ func parseReportsResponse(responses []*ga.GetReportsResponse, gagoRequest Google
 				parsed.IsDataGolden = report.Data.IsDataGolden
 				parsed.Maximums = report.Data.Maximums[0].Values
 				parsed.Minimums = report.Data.Minimums[0].Values
-				parsed.RowCount = report.Data.RowCount
+				parsed.RowCount = actualRows
 				parsed.SamplesReadCounts = report.Data.SamplesReadCounts
 				parsed.SamplingSpaceSizes = report.Data.SamplingSpaceSizes
 				parsed.Totals = report.Data.Totals[0].Values
@@ -117,6 +159,9 @@ func parseReportsResponse(responses []*ga.GetReportsResponse, gagoRequest Google
 
 			for _, row := range report.Data.Rows {
 				//fmt.Println("Parsing row: ", rowNum, row.Dimensions)
+				if row == nil {
+					continue
+				}
 				mets := row.Metrics[0].Values
 				parsedRowp[rowNum] = &ParseReportRow{Dimensions: row.Dimensions, Metrics: mets}
 				rowNum++
@@ -129,12 +174,12 @@ func parseReportsResponse(responses []*ga.GetReportsResponse, gagoRequest Google
 		}
 	}
 
-	parsed.Rows = parsedRowp
-
-	//order rows?
+	// remove nulls
+	parsed.Rows = deleteEmptyRowSlice(parsedRowp)
 
 	// js, _ := json.Marshal(parsed)
 	// fmt.Println("parsed: ", string(js))
+	fmt.Println("Parsed rows: ", rowNum)
 
 	return &parsed, pageToken
 

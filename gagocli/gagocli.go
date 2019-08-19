@@ -130,7 +130,7 @@ func main() {
 		End:        "2019-08-01",
 		Dimensions: "ga:date,ga:sourceMedium,ga:landingPagePath,ga:source,ga:hour,ga:minute,ga:eventCategory",
 		Metrics:    "ga:sessions,ga:users",
-		MaxRows:    120,
+		MaxRows:    0,
 		AntiSample: true}
 
 	report := gago.GoogleAnalytics(req)
@@ -139,5 +139,9 @@ func main() {
 	if js != nil {
 		fmt.Println(string(js))
 	}
+
+	//fmt.Println("Downloaded Rows: ", report.RowCount)
+
+	return
 
 }
