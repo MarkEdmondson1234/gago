@@ -1,7 +1,6 @@
 package gago
 
 import (
-	"fmt"
 	"strconv"
 
 	"google.golang.org/api/analyticsreporting/v4"
@@ -11,7 +10,7 @@ import (
 const antiSampleBatchSize = 250000
 
 func makeAntiSampleRequestList(gagoRequest *GoogleAnalyticsRequest) [][]*ga.ReportRequest {
-	fmt.Println("antisampling")
+	//fmt.Println("antisampling")
 	// do call to test if report is sampled
 	test := GoogleAnalyticsRequest{
 		Service:    gagoRequest.Service,
@@ -27,7 +26,7 @@ func makeAntiSampleRequestList(gagoRequest *GoogleAnalyticsRequest) [][]*ga.Repo
 	if testResponse.SamplesReadCounts == nil ||
 		testResponse.SamplingSpaceSizes == nil {
 		//if not, return normal list
-		fmt.Println("No sampling found")
+		//fmt.Println("No sampling found")
 		return makeRequestList(gagoRequest)
 	}
 
@@ -35,10 +34,10 @@ func makeAntiSampleRequestList(gagoRequest *GoogleAnalyticsRequest) [][]*ga.Repo
 	gagoRequest.maxPages = 1000000/gagoRequest.PageLimit + 1
 	gagoRequest.fetchedRows = testResponse.RowCount + 1
 
-	readCounts := float64(testResponse.SamplesReadCounts[0])
-	samplingSize := float64(testResponse.SamplingSpaceSizes[0])
+	//readCounts := float64(testResponse.SamplesReadCounts[0])
+	//samplingSize := float64(testResponse.SamplingSpaceSizes[0])
 
-	fmt.Println("sampling found: ", (readCounts/samplingSize)*100)
+	//fmt.Println("sampling found: ", (readCounts/samplingSize)*100)
 
 	// if sampled, fetch exploratory sessions call
 	var explore = GoogleAnalyticsRequest{
@@ -50,7 +49,7 @@ func makeAntiSampleRequestList(gagoRequest *GoogleAnalyticsRequest) [][]*ga.Repo
 		Metrics:    "ga:sessions",
 		MaxRows:    9999}
 	exploreResponse := GoogleAnalytics(explore)
-	fmt.Println("Explore found", exploreResponse.Totals)
+	//fmt.Println("Explore found", exploreResponse.Totals)
 
 	// work out date ranges to fetch
 	sessionsSoFar := 0
@@ -89,8 +88,8 @@ func makeAntiSampleRequestList(gagoRequest *GoogleAnalyticsRequest) [][]*ga.Repo
 	newStartDates = deleteEmptyStringSlice(newStartDates)
 	newEndDates = deleteEmptyStringSlice(newEndDates)
 
-	fmt.Println("start dates", newStartDates)
-	fmt.Println("end dates", newEndDates)
+	//fmt.Println("start dates", newStartDates)
+	//fmt.Println("end dates", newEndDates)
 
 	// construct new GoogleAnalyticsRequest objects via makeRequestList(gagoRequest)
 	antiSampleRequests := make([][][]*analyticsreporting.ReportRequest, len(newStartDates))
@@ -133,7 +132,7 @@ func makeAntiSampleRequestList(gagoRequest *GoogleAnalyticsRequest) [][]*ga.Repo
 		}
 	}
 
-	fmt.Println("total requests: ", totalRequests, " outputList: ", len(outputList), "tr: ", tr)
+	//fmt.Println("total requests: ", totalRequests, " outputList: ", len(outputList), "tr: ", tr)
 
 	// return
 	return outputList

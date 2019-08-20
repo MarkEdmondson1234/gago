@@ -16,7 +16,6 @@ func GetAccounts(service *ga.Service) {
 		log.Fatal("Can't find any accounts for this authentication")
 	}
 
-	fmt.Println("Found the following accounts:")
 	for _, acc := range accountResponse.Items {
 
 		fmt.Println(acc.Id, acc.Name)
@@ -32,7 +31,6 @@ func GetAccountSummary(service *ga.Service) {
 		log.Fatal("Can't find account summary")
 	}
 
-	fmt.Println("Found following account summary:")
 	for i, ass := range accountSummaryResponse.Items {
 		if i == 0 {
 			fmt.Println("accountId accountName webPropertyId webPropertyName viewId viewName")

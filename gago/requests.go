@@ -1,7 +1,6 @@
 package gago
 
 import (
-	"fmt"
 	"log"
 	"strconv"
 	"strings"
@@ -13,7 +12,7 @@ import (
 func makeRequestList(gagoRequest *GoogleAnalyticsRequest) [][]*ga.ReportRequest {
 
 	gagoRequest.maxPages = (gagoRequest.MaxRows / (gagoRequest.PageLimit * apiBatchLimit)) + 1
-	fmt.Println("maxPages: ", gagoRequest.maxPages)
+	//fmt.Println("maxPages: ", gagoRequest.maxPages)
 
 	requestList := make([][]*ga.ReportRequest, gagoRequest.maxPages)
 	fetchMore := true
@@ -36,7 +35,7 @@ func makeRequestList(gagoRequest *GoogleAnalyticsRequest) [][]*ga.ReportRequest 
 			// stop fetching if we've reached maxRows
 			if gagoRequest.pageSize < gagoRequest.PageLimit ||
 				(gagoRequest.MaxRows > 0 && gagoRequest.fetchedRows >= gagoRequest.MaxRows) {
-				fmt.Println("dont fetchmore")
+				//fmt.Println("dont fetchmore")
 				fetchMore = false
 				break
 			}
@@ -59,7 +58,7 @@ func fetchConcurrentReport(requestList [][]*ga.ReportRequest, gagoRequest Google
 	// 1- 1-10, 2 - 11-20 etc.
 	responses := make([]*ga.GetReportsResponse, gagoRequest.maxPages)
 
-	fmt.Println("maxPages: ", gagoRequest.maxPages)
+	//fmt.Println("maxPages: ", gagoRequest.maxPages)
 
 	//fmt.Println("requestList>", requestList)
 
@@ -69,7 +68,7 @@ func fetchConcurrentReport(requestList [][]*ga.ReportRequest, gagoRequest Google
 		//fmt.Println("batch: ", i, min(i+concurrencyLimit, len(requestList)))
 		batch := requestList[i:min(i+concurrencyLimit, len(requestList))]
 		var wg sync.WaitGroup
-		fmt.Println("api concurrency size:", len(batch))
+		//fmt.Println("api concurrency size:", len(batch))
 
 		wg.Add(len(batch))
 
@@ -136,8 +135,8 @@ func makeRequest(gagoRequest GoogleAnalyticsRequest) *ga.ReportRequest {
 	requests.PageToken = gagoRequest.pageToken
 
 	// print out json request
-	js, _ := requests.MarshalJSON()
-	fmt.Println("\n# Request:", string(js))
+	//js, _ := requests.MarshalJSON()
+	//fmt.Println("\n# Request:", string(js))
 
 	return &requests
 }

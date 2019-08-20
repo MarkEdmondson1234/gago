@@ -31,6 +31,16 @@ export GOPATH=$HOME/dev/go
 
 There is a module and a command line tool (cli)
 
+## Tests
+
+Add the json credential file to an environment argument called `GAGO_AUTH` in your ~/.bash_profile
+
+Then run 
+
+```
+go test github.com/MarkEdmondson1234/gago/gago
+```
+
 ### Command Line Interface
 
 ```sh
