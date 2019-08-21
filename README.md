@@ -12,48 +12,9 @@ go install github.com/MarkEdmondson1234/gago/gago
 go install github.com/MarkEdmondson1234/gago/gagocli
 ```
 
-Executable should now be at `~/dev/go/bin/gagocli`
+Executable should now be at `$GOPATH/bin/gagocli`
 
-Download an auth json file from a GCP project with analytics API enabled, and add the service email to the accounts you want to download.
-
-Supply the auth json file via the `-a` flag or set to `GAGO_AUTH` environment argument in your `~/.bash_profile`
-
-Run via:
-
-```sh
-$> ./bin/gagocli
-#gagocli [subcommand...] [arguments...]
-#
-#Subcommand:
-#reports	Download data from Google Analytics API v4
-#accounts Get account summary of accounts, webproperties and viewIds
-#
-#Use -h to get help on subcommand e.g. gagocli report -h
-./bin/gagocli reports -h
-#Usage of reports:
-#  -a string
-#    	File path to auth.json service file. Or set via GAGO_AUTH environment argument
-#  -antisample
-#    	Whether to run anti-sampling
-#  -c string
-#    	Optional config.yml specifying arguments
-#  -dims string
-#    	The dimensions ('ga:date,ga:sourceMedium') to run config for
-#  -end string
-#    	The end date (YYYY-mm-dd) to run config for
-#  -max int
-#    	The amount of rows to fetch.  Use 0 to fetch all rows (default 1000)
-#  -mets string
-#    	The metrics ('ga:users,ga:sessions') to run config for
-#  -start string
-#    	The start date (YYYY-mm-dd) to run config for
-#  -view string
-#    	The Google Analytics ViewId to run config for
-./bin/gagocli accounts -h
-#Usage of accounts:
-#  -a string
-#    	File path to auth.json service file. Or set via GAGO_AUTH environment argument
-```
+(In future just download the executable once its created)
 
 You can add this to your path variable so you can issue only `gagocli`.
 
@@ -78,9 +39,54 @@ gagocli
 #Use -h to get help on subcommand e.g. gagocli report -h
 ```
 
+Download an auth json file from a GCP project with analytics API enabled, and add the service email to the accounts you want to download.
+
+Supply the auth json file via the `-a` flag or set to `GAGO_AUTH` environment argument in your `~/.bash_profile`
+
+Run via:
+
+```sh
+gagocli
+#gagocli [subcommand...] [arguments...]
+#
+#Subcommand:
+#reports	Download data from Google Analytics API v4
+#accounts Get account summary of accounts, webproperties and viewIds
+#
+#Use -h to get help on subcommand e.g. gagocli report -h
+
+gagocli reports -h
+#Usage of reports:
+#  -a string
+#    	File path to auth.json service file. Or set via GAGO_AUTH environment argument
+#  -antisample
+#    	Whether to run anti-sampling
+#  -c string
+#    	Optional config.yml specifying arguments
+#  -dims string
+#    	The dimensions ('ga:date,ga:sourceMedium') to run config for
+#  -end string
+#    	The end date (YYYY-mm-dd) to run config for
+#  -max int
+#    	The amount of rows to fetch.  Use 0 to fetch all rows (default 1000)
+#  -mets string
+#    	The metrics ('ga:users,ga:sessions') to run config for
+#  -start string
+#    	The start date (YYYY-mm-dd) to run config for
+#  -view string
+#    	The Google Analytics ViewId to run config for
+
+gagocli accounts -h
+#Usage of accounts:
+#  -a string
+#    	File path to auth.json service file. Or set via GAGO_AUTH environment argument
+```
+
+
+
 ## Usage
 
-You can supply a `.yml` file with the configuration of the Google Analytics report to download.  The client email for this file needs to be added to the account/views you want to download as a user.
+You can add arguments via the flags of the CLI, or supply a `.yml` file with the configuration of the Google Analytics report to download.  The client email for this file needs to be added to the account/views you want to download as a user.
 
 Example yml file:
 
@@ -93,23 +99,18 @@ gago:
   end: 2019-08-01
 ```
 
-This cab be sent in the CLI arguments `-c`
+This can be sent in the CLI arguments `-c`
 
 ```bash
 $> gagocli reports -c config.yml
-Configuration read for viewId: 8141444
-Found the following accounts:
-474333439 MarkEdmondson
+# {"dimensionHeaderEntries":["ga:date","ga:sourceMedium"],"metricHeaderEntries":[{"name":"ga:sessions","type":"INTEGER"},{"name":"ga:users","type":"INTEGER"}],"values":[{"dimensions":["20190101","(direct) / (none)"]
 ```
 
 You can override values in the config file via the command line arguments
 
-
 ```bash
-$> gagocli -c config.yml -a your-auth-file.json
-Configuration read for viewId: 8141444
-Found the following accounts:
-474333439 MarkEdmondson
+$> gagocli -c config.yml -v 123456
+# {"dimensionHeaderEntries":["ga:date","ga:sourceMedium"],"metricHeaderEntries":[{"name":"ga:sessions","type":"INTEGER"},{"name":"ga:users","type":"INTEGER"}],"values":[{"dimensions":["20190101","(direct) / (none)"]
 ```
 
 ## References
@@ -158,8 +159,6 @@ Then run
 go test github.com/MarkEdmondson1234/gago/gago
 ```
 
-
-
 ### gago library
 
 The Google Analytics API functions are in a library so it can be used for other Go programs, available via github.com/MarkEdmondson1234/gago/gago
@@ -170,5 +169,3 @@ Current functions:
 * GetAccounts
 * GetAccountSummary
 * GoogleAnalytics
-
-Only dimensions and metrics can be fetched for first page at the moment.
