@@ -3,4 +3,6 @@ gago:
   metrics: ga:sessions,ga:users
   dimensions: ga:date,ga:sourceMedium
   start: 2019-01-01
-  end: 2019-08-01
+  end: 2019-03-01
+  maxRows: 1000
+  antisample: false

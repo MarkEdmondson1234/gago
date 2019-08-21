@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"log"
+	"flag"
 
 	"github.com/MarkEdmondson1234/gago/gago"
 
@@ -10,54 +10,158 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/akamensky/argparse"
-
 	"github.com/olebedev/config"
 )
 
-type args struct {
+type argFlags struct {
 	config     string
 	auth       string
 	view       string
 	start      string
 	end        string
+	metrics    string
+	dimensions string
 	antisample bool
+	maxRows    int64
 }
 
-func parseArgs() args {
-	// Create new parser object
-	parser := argparse.NewParser("gago", "Downloads data from Google Analytics Reporting API v4")
-	// Create flags
-	var config = parser.String("c", "config", &argparse.Options{Required: true, Help: "config.yml containing API payload to fetch"})
-	var auth = parser.String("a", "auth", &argparse.Options{Required: true, Help: "auth.json service email downloaded from GCP "})
-	var view = parser.String("v", "view", &argparse.Options{Required: false, Help: "The Google Analytics ViewId to run config for (Default as configured in config.yml)"})
-	var start = parser.String("s", "start", &argparse.Options{Required: false, Help: "The start date (YYYY-mm-dd) to run config for (Default as configured in config.yml)"})
-	var end = parser.String("e", "end", &argparse.Options{Required: false, Help: "The end date (YYYY-mm-dd) to run config for (Default as configured in config.yml)"})
-	var antisample = parser.Flag("S", "antisample", &argparse.Options{Required: false, Help: "Whether to run anti-sampling (Default as configured in config.yml)"})
+func parseArgs() (string, argFlags) {
 
-	// Parse input
-	err := parser.Parse(os.Args)
-	if err != nil {
-		// In case of error print error and print usage
-		// This can also be done by passing -h or --help flags
-		fmt.Print(parser.Usage(err))
+	//report args
+	reportCmd := flag.NewFlagSet("reports", flag.ExitOnError)
+	var view = reportCmd.String("view", "", "The Google Analytics ViewId to run config for")
+	var start = reportCmd.String("start", "", "The start date (YYYY-mm-dd) to run config for")
+	var end = reportCmd.String("end", "", "The end date (YYYY-mm-dd) to run config for")
+	var antisample = reportCmd.Bool("antisample", false, "Whether to run anti-sampling")
+	var metrics = reportCmd.String("mets", "", "The metrics ('ga:users,ga:sessions') to run config for")
+	var dimensions = reportCmd.String("dims", "", "The dimensions ('ga:date,ga:sourceMedium') to run config for")
+	var maxRows = reportCmd.Int64("max", 1000, "The amount of rows to fetch.  Use 0 to fetch all rows")
+	var config = reportCmd.String("c", "", "Optional config.yml specifying arguments")
+	var auth = reportCmd.String("a", "", "File path to auth.json service file. Or set via GAGO_AUTH environment argument")
+
+	//account args
+	accSumCmd := flag.NewFlagSet("accounts", flag.ExitOnError)
+	var auth2 = accSumCmd.String("a", "", "File path to auth.json service file. Or set via GAGO_AUTH environment argument")
+
+	if len(os.Args) < 2 {
+		usage()
 	}
 
-	return args{
-		config:     *config,
-		auth:       *auth,
-		view:       *view,
-		start:      *start,
-		end:        *end,
-		antisample: *antisample}
+	args := argFlags{}
+	switch os.Args[1] {
+	case "accounts":
+		accSumCmd.Parse(os.Args[2:])
+		args.auth = *auth2
+		if args.auth == "" {
+			if os.Getenv("GAGO_AUTH") == "" {
+				fmt.Println("Must supply auth json file via -a or GAGO_AUTH environment arg")
+				os.Exit(1)
+			}
+			args.auth = os.Getenv("GAGO_AUTH")
+		}
+	case "reports":
+		reportCmd.Parse(os.Args[2:])
+		args.view = *view
+		args.start = *start
+		args.end = *end
+		args.antisample = *antisample
+		args.metrics = *metrics
+		args.dimensions = *dimensions
+		args.maxRows = *maxRows // default 1000
+		args.auth = *auth
+		args.config = *config
+
+		if args.auth == "" {
+			if os.Getenv("GAGO_AUTH") == "" {
+				fmt.Println("Must supply auth json file via -a or GAGO_AUTH environment arg")
+				os.Exit(1)
+			}
+			args.auth = os.Getenv("GAGO_AUTH")
+		}
+
+		cfg := readConfigYaml(*config)
+
+		if args.view == "" {
+			viewid, err := cfg.String("view")
+			if err != nil {
+				fmt.Println("No viewId passed to fetch data for")
+				os.Exit(1)
+			}
+			args.view = viewid
+		}
+
+		if args.start == "" {
+			start, err := cfg.String("start")
+			if err != nil {
+				fmt.Println("No start passed to fetch data for")
+				os.Exit(1)
+			}
+			args.start = start
+		}
+
+		if args.end == "" {
+			end, err := cfg.String("end")
+			if err != nil {
+				fmt.Println("No end passed to fetch data for")
+				os.Exit(1)
+			}
+			args.end = end
+		}
+
+		if !args.antisample {
+			as, _ := cfg.Bool("antisample")
+			// if nothing, its ok as default is nothing
+			args.antisample = as
+		}
+
+		if args.metrics == "" {
+			mets, err := cfg.String("metrics")
+			if err != nil {
+				fmt.Println("No metrics passed to fetch data for")
+				os.Exit(1)
+			}
+			args.metrics = mets
+		}
+
+		if args.dimensions == "" {
+			dims, _ := cfg.String("dimensions")
+
+			args.dimensions = dims
+		}
+
+		// will use flag default of 1000 if not in config or flags
+		mr, _ := cfg.Int("maxRows")
+		args.maxRows = int64(mr)
+
+	default:
+		fmt.Println("Command not recognised:", os.Args[1])
+		usage()
+	}
+
+	return os.Args[1], args
+
 }
+
+func usage() {
+	fmt.Println(usageText)
+	os.Exit(0)
+}
+
+var usageText = `gagocli [subcommand...] [arguments...]
+subcommand:
+reports	- Download data from Google Analytics API v4
+accounts - Get account summary of accounts, webproperties and viewIds
+
+Use -h to get help on subcommand e.g. gagocli report -h
+`
 
 func readConfigYaml(filename string) *config.Config {
 
-	file, err := ioutil.ReadFile(filename)
-	if err != nil {
-		panic(err)
+	if filename == "" {
+		cfg, _ := config.ParseYaml("")
+		return cfg
 	}
+	file, err := ioutil.ReadFile(filename)
 	yamlString := string(file)
 
 	cfg, err := config.ParseYaml(yamlString)
@@ -67,81 +171,44 @@ func readConfigYaml(filename string) *config.Config {
 
 	cfgg, err := cfg.Get("gago")
 	if err != nil {
-		panic(err)
+		fmt.Println("Incorrect gago configuration in file:", filename)
+		os.Exit(1)
 	}
+
 	return cfgg
 }
 
 func main() {
 
-	args := parseArgs()
+	cmd, flags := parseArgs()
 
-	cfg := readConfigYaml(args.config)
+	analyticsreportingService, analyticsService := gago.Authenticate(flags.auth)
 
-	var view = args.view
+	switch cmd {
+	case "accounts":
+		gago.GetAccountSummary(analyticsService)
+	case "reports":
+		var req = gago.GoogleAnalyticsRequest{
+			Service:    analyticsreportingService,
+			ViewID:     flags.view,
+			Start:      flags.start,
+			End:        flags.end,
+			Dimensions: flags.dimensions,
+			Metrics:    flags.metrics,
+			MaxRows:    0,
+			AntiSample: flags.antisample}
 
-	if args.view == "" {
-		viewid, err := cfg.String("view")
-		if err != nil {
-			log.Fatal("No viewId passed to fetch data for")
+		report := gago.GoogleAnalytics(req)
+
+		js, _ := json.Marshal(report)
+		if js != nil {
+			fmt.Println(string(js))
 		}
-		view = viewid
-	} else {
-		view = args.view
+
+		//fmt.Println("Downloaded Rows: ", report.RowCount)
+	default:
+		fmt.Println("Command not recognised:", os.Args[1])
+		os.Exit(1)
 	}
-
-	t := fmt.Sprintf("Configuration read for viewId: %s", view)
-	fmt.Println(t)
-
-	analyticsreportingService, analyticsService := gago.Authenticate(args.auth)
-
-	gago.GetAccounts(analyticsService)
-
-	gago.GetAccountSummary(analyticsService)
-
-	// for _, r := range report {
-	// 	js, _ := json.Marshal(r)
-	// 	fmt.Println("Response:", string(js))
-	// }
-
-	// a struct so you can not specify all values and leave some as default values
-	// var req = gago.GoogleAnalyticsRequest{
-	// 	Service:    analyticsreportingService,
-	// 	ViewID:     "81416156",
-	// 	Start:      "2019-07-01",
-	// 	End:        "2019-08-01",
-	// 	Dimensions: "ga:date,ga:sourceMedium",
-	// 	Metrics:    "ga:sessions,ga:users",
-	// 	MaxRows:    63}
-
-	// var req = gago.GoogleAnalyticsRequest{
-	// 	Service:    analyticsreportingService,
-	// 	ViewID:     "81416156",
-	// 	Start:      "2019-07-01",
-	// 	End:        "2019-08-01",
-	// 	Dimensions: "ga:date,ga:sourceMedium",
-	// 	Metrics:    "ga:sessions,ga:users",
-	// 	MaxRows:    120}
-
-	var req = gago.GoogleAnalyticsRequest{
-		Service:    analyticsreportingService,
-		ViewID:     "106249469",
-		Start:      "2016-07-01",
-		End:        "2019-08-01",
-		Dimensions: "ga:date,ga:sourceMedium,ga:landingPagePath,ga:source,ga:hour,ga:minute,ga:eventCategory",
-		Metrics:    "ga:sessions,ga:users",
-		MaxRows:    0,
-		AntiSample: true}
-
-	report := gago.GoogleAnalytics(req)
-
-	js, _ := json.Marshal(report)
-	if js != nil {
-		fmt.Println(string(js))
-	}
-
-	//fmt.Println("Downloaded Rows: ", report.RowCount)
-
-	return
 
 }
