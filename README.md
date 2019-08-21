@@ -102,14 +102,14 @@ gago:
 This can be sent in the CLI arguments `-c`
 
 ```bash
-$> gagocli reports -c config.yml
+gagocli reports -c config.yml
 # {"dimensionHeaderEntries":["ga:date","ga:sourceMedium"],"metricHeaderEntries":[{"name":"ga:sessions","type":"INTEGER"},{"name":"ga:users","type":"INTEGER"}],"values":[{"dimensions":["20190101","(direct) / (none)"]
 ```
 
 You can override values in the config file via the command line arguments
 
 ```bash
-$> gagocli -c config.yml -v 123456
+gagocli reports -c config.yml -v 123456
 # {"dimensionHeaderEntries":["ga:date","ga:sourceMedium"],"metricHeaderEntries":[{"name":"ga:sessions","type":"INTEGER"},{"name":"ga:users","type":"INTEGER"}],"values":[{"dimensions":["20190101","(direct) / (none)"]
 ```
 
