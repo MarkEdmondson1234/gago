@@ -2,3 +2,7 @@ language: go
 
 go:
   - master
+
+before_install: cd gago
+
+script: go test -v ./...
