@@ -15,7 +15,16 @@ const apiBatchLimit = 5
 var verbose bool
 
 //GoogleAnalyticsRequest Make a request object to pass to GoogleAnalytics
-//Set MaxRows to -1 to fetch all rows available
+//Service needs to be the reportingService from Analytics
+//ViewID is the GA View to fetch from
+//Start and End are strings in YYYY-MM-DD format
+//Metrics is required, a comma seperated string of valid ga: prefix
+//Dimensions expects a comma seerated string with valid ga: prefix
+//MaxRows set to -1 to fetch all rows available
+//PageLimit set how many pages to fetch each API request batch - default 10000
+//UseResourceQuotas if using GA360, set this to TRUE to get increased quota limits
+//AntiSample set to true to attempt to antisample data by breaking up into smaller API calls
+//Verbose Prints logs to stdout
 type GoogleAnalyticsRequest struct {
 	Service                                 *ga.Service
 	ViewID, Start, End, Dimensions, Metrics string
@@ -27,6 +36,7 @@ type GoogleAnalyticsRequest struct {
 }
 
 //GoogleAnalytics Make a request to the v4 Reporting API
+//Supply the function a GoogleAnalyticsRequest struct object
 func GoogleAnalytics(gagoRequest GoogleAnalyticsRequest) *ParseReport {
 
 	if gagoRequest.Verbose {
@@ -94,7 +104,8 @@ type ParseReportRow struct {
 	Metrics    []string `json:"metrics,omitempty"`
 }
 
-// ParseReport A parsed Report after all batching and paging
+//ParseReport A parsed Report after all batching and paging
+//This takes all the API responses and puts it into a single more usable structure
 type ParseReport struct {
 	ColumnHeaderDimension []string                `json:"dimensionHeaderEntries,omitempty"`
 	ColumnHeaderMetrics   []*ga.MetricHeaderEntry `json:"metricHeaderEntries,omitempty"`
@@ -110,7 +121,7 @@ type ParseReport struct {
 	Totals                []string                `json:"totals,omitempty"`
 }
 
-// ParseReportsResponse turns ga.GetReportsResponse into ParseReport
+// parseReportsResponse turns ga.GetReportsResponse into ParseReport
 func parseReportsResponse(responses []*ga.GetReportsResponse, gagoRequest GoogleAnalyticsRequest) (parsedReport *ParseReport, pageToken string) {
 
 	parsed := ParseReport{}

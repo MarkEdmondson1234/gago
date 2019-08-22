@@ -9,35 +9,23 @@ import (
 func TestReport(t *testing.T) {
 
 	authFile := os.Getenv("GAGO_AUTH")
-	analyticsreportingService, _ := Authenticate(authFile)
+	analyticsreportingService, analyticsService := Authenticate(authFile)
+
+	acc := GetAccountSummary(analyticsService)
 
 	var req = GoogleAnalyticsRequest{
 		Service:    analyticsreportingService,
-		ViewID:     "106249469",
-		Start:      "2016-07-01",
-		End:        "2019-08-01",
-		Dimensions: "ga:date,ga:sourceMedium,ga:landingPagePath,ga:source,ga:hour,ga:minute,ga:eventCategory",
+		ViewID:     acc.viewID[0],
+		Start:      "7DaysAgo",
+		End:        "yesterday",
+		Dimensions: "ga:date",
 		Metrics:    "ga:sessions,ga:users",
-		MaxRows:    0,
-		AntiSample: true}
+		MaxRows:    100,
+		AntiSample: false}
 
 	report := GoogleAnalytics(req)
 
-	if report.Totals[0] != "11665" {
-		t.Errorf("Expected report.Totals = '11665' but got %s", report.Totals[0])
+	if report.FetchedRowCount == 0 {
+		t.Errorf("No rows fetched!")
 	}
-}
-
-//TestAccountSummary Test account summary
-func TestAccountSummary(t *testing.T) {
-
-	authFile := os.Getenv("GAGO_AUTH")
-	_, analyticsService := Authenticate(authFile)
-
-	GetAccountSummary(analyticsService)
-	//Output:
-	//accountId accountName webPropertyId webPropertyName viewId viewName
-	//47480439 MarkEdmondson UA-47480439-2 MarkEdmondson oldGA 81416156 Live Blog
-	//47480439 MarkEdmondson UA-47480439-1 markedmondson.me 81416941 All Web Site Data
-	//54019251 Sunholo Websites UA-54019251-4 Mark's GA360 WebProperty 106249469 WF GA Premium E-commerce
 }

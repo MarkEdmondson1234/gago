@@ -1,7 +1,13 @@
 # gago
 Google Analytics for Go
 
-Create a CLI that will download GA multi-threaded, using anti-sampling, auto-paging etc. as developed with `googleAnalyticsR::google_analytics()`
+[![Build Status](https://travis-ci.com/MarkEdmondson1234/gago.svg?branch=master)](https://travis-ci.com/MarkEdmondson1234/gago)
+
+[gago documentation on godoc.com](https://godoc.org/github.com/MarkEdmondson1234/gago/gago)
+
+## Mission
+
+Create a CLI that will download GA multi-threaded, using anti-sampling, auto-paging etc. as developed with [`googleAnalyticsR::google_analytics()`](https://code.markedmondson.me/googleAnalyticsR/articles/v4.html#anti-sampling)
 
 Intended use case is for creating executables that can run on any machine without installing another program first, such as R or Python.  This should give more options for running scheduled scripts etc. 
 
