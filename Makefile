@@ -18,7 +18,7 @@ install:
 		$(GOINSTALL) $(BINARY_NAME)
 		$(GOINSTALL) $(BINARY_NAME_CLI)
 test: 
-		$(GOTEST) -v ./...
+		$(GOTEST) -v -race -coverprofile=coverage.txt -covermode=atomic ./...
 clean: 
 		$(GOCLEAN)
 		rm -f $(GOPATH)/bin/$(LIB)
@@ -38,6 +38,7 @@ deps:
 # Cross compilation
 release:
 		mkdir -p release
+		ls
 		cd gagocli
 		env GOOS=linux GOARCH=amd64 $(GOBUILD) -o ../release/$(CLI)-$(VERSION)-linux-amd64 -v $(BINARY_NAME_CLI)
 		env GOOS=darwin GOARCH=amd64 $(GOBUILD) -o ../release/$(CLI)-$(VERSION)-darwin-amd64 -v $(BINARY_NAME_CLI)
