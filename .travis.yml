@@ -2,7 +2,7 @@ language: go
 go:
 - master
 script:
-- make
+- make deps test
 before_deploy:
 - make VERSION=${TRAVIS_TAG} release
 deploy:
@@ -15,4 +15,4 @@ before_install:
   -in mark-edmondson-gde.json.enc -out mark-edmondson-gde.json -d
 env:
   - GAGO_AUTH=mark-edmondson-gde.json
-  
+

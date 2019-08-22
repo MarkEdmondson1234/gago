@@ -13,7 +13,7 @@ BINARY_UNIX=$(BINARY_NAME)_unix
 BINARY_UNIX_CLI=$(BINARY_NAME_CLI)_unix
 VERSION ?=vlatest
 
-all: test install
+all: deps test install
 install: 
 		$(GOINSTALL) $(BINARY_NAME)
 		$(GOINSTALL) $(BINARY_NAME_CLI)
@@ -34,6 +34,7 @@ deps:
 		$(GOGET) google.golang.org/api/analytics/v3
 		$(GOGET) google.golang.org/api/analyticsreporting/v4
 		$(GOGET) google.golang.org/api/googleapi
+		$(GOGET) google.golang.org/api/option
 
 
 # Cross compilation
