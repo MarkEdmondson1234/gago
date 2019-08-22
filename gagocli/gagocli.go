@@ -160,7 +160,7 @@ func readConfigYaml(filename string) *config.Config {
 		cfg, _ := config.ParseYaml("")
 		return cfg
 	}
-	file, err := ioutil.ReadFile(filename)
+	file, _ := ioutil.ReadFile(filename)
 	yamlString := string(file)
 
 	cfg, err := config.ParseYaml(yamlString)
