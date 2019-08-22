@@ -40,6 +40,6 @@ deps:
 release:
 		mkdir -p release
 		cd gagocli
-		env GOOS=linux GOARCH=amd64 $(GOBUILD) -o ../release$(CLI)-$(VERSION)-linux-amd64 -v
-		env GOOS=darwin GOARCH=amd64 $(GOBUILD) -o ../release/$(CLI)-$(VERSION)-darwin-amd64 -v
-		env GOOS=windows GOARCH=amd64 $(GOBUILD) -o ../release/$(CLI)-$(VERSION)-windows-amd64.exe -v
+		env GOOS=linux GOARCH=amd64 $(GOBUILD) -o ../release$(CLI)-$(VERSION)-linux-amd64 -v $(BINARY_NAME_CLI)
+		env GOOS=darwin GOARCH=amd64 $(GOBUILD) -o ../release/$(CLI)-$(VERSION)-darwin-amd64 -v $(BINARY_NAME_CLI)
+		env GOOS=windows GOARCH=amd64 $(GOBUILD) -o ../release/$(CLI)-$(VERSION)-windows-amd64.exe -v $(BINARY_NAME_CLI)
