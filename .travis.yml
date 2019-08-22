@@ -11,7 +11,8 @@ deploy:
     secure: pxAvpHgHGOI+FlUuO6Aek7NsoriYKSKdZ7d7EemZPQhYX+5Noq41hiEDEBXrAEoPdr9pv3OkPNGgFrXmP5l+Xb9jDzivJJ4UyUukKu6f2pfncMablRULyUwiDjGkc4ibCE6zjI+sKS0aMPRwcN7ACiJJUmNMb2CTHh7Hv/2sYYp8pAolvbW4mcZbIgn/TGaXURhT+Vk5n1vgKqZnssuCeXWo8fA30oqHpC1mELQP2/25OmVFGhYt7+encspvdtZowClPDzeB2zsfgR2S8uYesD1WbvKJM/RzmzbEGCAugNrounixqFH9v3g13brs8a+PYSbqIbGJSIMPVt9x9UvEeKjLvSD6ZWnDiADuPDbPOE1IM9RECKzFuvZA1567PLj0FMxCf27EQgqm88FKfS9fwripF/WQAUr/18EQ5ccw5K9ibUN1/OJC5okoYunGJ/1eR10DzynWWn4fLQPlIAr1JEgMQ/WXawkS3CTOCMVTXraNCnf11soRoLkB4kvh3jRsMpmLhFXTubA/ISMn0cZS4irXsY02D7ckgor3i709zotWTuaMTdjGFUO8kUgu8ocYFG/ACKBAECNOarwe+B0v0l+EEMiryn3kgY9Tc2CdmrFBZTt73eKpQO/32xk3snH7qOSzZxKGlX4bWlB90MKVyxpbOtTpSTvqHzyG70rXzx8=
   file: release/*
 env:
-- GAGO_AUTH=mark-edmondson-gde.json
+- GAGO_AUTH=${TRAVIS_BUILD_DIR}/auth.json
 before_install:
 - openssl aes-256-cbc -K $encrypted_de38e743208e_key -iv $encrypted_de38e743208e_iv
   -in mark-edmondson-gde.json.enc -out mark-edmondson-gde.json -d
+- mv mark-edmondson-gde.json ${TRAVIS_BUILD_DIR}/auth.json
