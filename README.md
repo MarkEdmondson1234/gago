@@ -124,7 +124,7 @@ cat results.csv
 
 Or if you prefer you can specify the file output via the `-o` flag:
 
-``bash
+```bash
 gagocli reports -c config.yml -o results.csv
 cat results.csv
 ```
