@@ -21,10 +21,9 @@ test:
 		$(GOTEST) -v ./...
 clean: 
 		$(GOCLEAN)
-		rm -f $(BINARY_NAME)
-		rm -f $(BINARY_NAME_CLI)
-		rm -f $(BINARY_UNIX)
-		rm -f $(BINARY_UNIX_CLI)
+		rm -f $(GOPATH)/bin/$(LIB)
+		rm -f $(GOPATH)/bin/$(CLI)
+
 run:
 		$(GOINSTALL) $(BINARY_NAME)
 		$(GOINSTALL) $(BINARY_NAME_CLI)
