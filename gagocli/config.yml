@@ -1,8 +1,8 @@
 gago:
   view: 81416156
   metrics: ga:sessions,ga:users
-  dimensions: ga:date,ga:sourceMedium
+  dimensions: ga:date,ga:sourceMedium,ga:landingPagePath
   start: 2019-01-01
   end: 2019-03-01
   maxRows: 1000
-  antisample: false
+  antisample: true

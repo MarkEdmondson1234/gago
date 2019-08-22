@@ -1,7 +1,7 @@
 package main
 
 import (
-	"encoding/json"
+	"encoding/csv"
 	"flag"
 
 	"github.com/MarkEdmondson1234/gago/gago"
@@ -23,6 +23,8 @@ type argFlags struct {
 	dimensions string
 	antisample bool
 	maxRows    int64
+	output     string
+	verbose    bool
 }
 
 func parseArgs() (string, argFlags) {
@@ -38,6 +40,8 @@ func parseArgs() (string, argFlags) {
 	var maxRows = reportCmd.Int64("max", 1000, "The amount of rows to fetch.  Use 0 to fetch all rows")
 	var config = reportCmd.String("c", "", "Optional config.yml specifying arguments")
 	var auth = reportCmd.String("a", "", "File path to auth.json service file. Or set via GAGO_AUTH environment argument")
+	var output = reportCmd.String("o", "", "If used will write CSV output to this file")
+	var verbose = reportCmd.Bool("v", false, "Verbose output.")
 
 	//account args
 	accSumCmd := flag.NewFlagSet("accounts", flag.ExitOnError)
@@ -70,6 +74,8 @@ func parseArgs() (string, argFlags) {
 		args.maxRows = *maxRows // default 1000
 		args.auth = *auth
 		args.config = *config
+		args.verbose = *verbose
+		args.output = *output
 
 		if args.auth == "" {
 			if os.Getenv("GAGO_AUTH") == "" {
@@ -83,28 +89,19 @@ func parseArgs() (string, argFlags) {
 
 		if args.view == "" {
 			viewid, err := cfg.String("view")
-			if err != nil {
-				fmt.Println("No viewId passed to fetch data for")
-				os.Exit(1)
-			}
+			checkError("No viewId passed to fetch data for", err)
 			args.view = viewid
 		}
 
 		if args.start == "" {
 			start, err := cfg.String("start")
-			if err != nil {
-				fmt.Println("No start passed to fetch data for")
-				os.Exit(1)
-			}
+			checkError("No start passed to fetch data for", err)
 			args.start = start
 		}
 
 		if args.end == "" {
 			end, err := cfg.String("end")
-			if err != nil {
-				fmt.Println("No end passed to fetch data for")
-				os.Exit(1)
-			}
+			checkError("No end passed to fetch data for", err)
 			args.end = end
 		}
 
@@ -116,10 +113,7 @@ func parseArgs() (string, argFlags) {
 
 		if args.metrics == "" {
 			mets, err := cfg.String("metrics")
-			if err != nil {
-				fmt.Println("No metrics passed to fetch data for")
-				os.Exit(1)
-			}
+			checkError("No metrics passed", err)
 			args.metrics = mets
 		}
 
@@ -130,8 +124,13 @@ func parseArgs() (string, argFlags) {
 		}
 
 		// will use flag default of 1000 if not in config or flags
-		mr, _ := cfg.Int("maxRows")
-		args.maxRows = int64(mr)
+		if args.maxRows == 1000 {
+			mr, _ := cfg.Int("maxRows")
+			if mr != 0 {
+				args.maxRows = int64(mr)
+			}
+
+		}
 
 	default:
 		fmt.Println("Command not recognised:", os.Args[1])
@@ -195,14 +194,43 @@ func main() {
 			End:        flags.end,
 			Dimensions: flags.dimensions,
 			Metrics:    flags.metrics,
-			MaxRows:    0,
-			AntiSample: flags.antisample}
+			MaxRows:    flags.maxRows,
+			AntiSample: flags.antisample,
+			Verbose:    flags.verbose}
 
 		report := gago.GoogleAnalytics(req)
 
-		js, _ := json.Marshal(report)
-		if js != nil {
-			fmt.Println(string(js))
+		// write headers
+		var metricHeaders []string
+		for _, met := range report.ColumnHeaderMetrics {
+			metricHeaders = append(metricHeaders, met.Name)
+		}
+		headerRow := append(report.ColumnHeaderDimension, metricHeaders...)
+
+		var writer *csv.Writer
+		if len(flags.output) > 0 {
+			// write to csv
+			file, err := os.Create(flags.output)
+			if err != nil {
+				fmt.Println("Couldn't open file to write to: ", flags.output)
+				os.Exit(1)
+			}
+			defer file.Close()
+
+			writer = csv.NewWriter(file)
+		} else {
+			// print to console
+			writer = csv.NewWriter(os.Stdout)
+		}
+
+		defer writer.Flush()
+		writer.Write(headerRow)
+
+		for _, value := range report.Rows {
+			// write rows
+			fullrow := append(value.Dimensions, value.Metrics...)
+			err := writer.Write(fullrow)
+			checkError("Couldn't write to file", err)
 		}
 
 		//fmt.Println("Downloaded Rows: ", report.RowCount)
@@ -211,4 +239,11 @@ func main() {
 		os.Exit(1)
 	}
 
+}
+
+func checkError(s string, err error) {
+	if err != nil {
+		fmt.Println(s)
+		os.Exit(1)
+	}
 }

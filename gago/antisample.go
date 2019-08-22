@@ -1,6 +1,7 @@
 package gago
 
 import (
+	"fmt"
 	"strconv"
 
 	"google.golang.org/api/analyticsreporting/v4"
@@ -10,7 +11,7 @@ import (
 const antiSampleBatchSize = 250000
 
 func makeAntiSampleRequestList(gagoRequest *GoogleAnalyticsRequest) [][]*ga.ReportRequest {
-	//fmt.Println("antisampling")
+	myMessage("Antisampling - making test API call")
 	// do call to test if report is sampled
 	test := GoogleAnalyticsRequest{
 		Service:    gagoRequest.Service,
@@ -26,7 +27,7 @@ func makeAntiSampleRequestList(gagoRequest *GoogleAnalyticsRequest) [][]*ga.Repo
 	if testResponse.SamplesReadCounts == nil ||
 		testResponse.SamplingSpaceSizes == nil {
 		//if not, return normal list
-		//fmt.Println("No sampling found")
+		myMessage("No sampling found - requesting standard API call")
 		return makeRequestList(gagoRequest)
 	}
 
@@ -34,10 +35,11 @@ func makeAntiSampleRequestList(gagoRequest *GoogleAnalyticsRequest) [][]*ga.Repo
 	gagoRequest.maxPages = 1000000/gagoRequest.PageLimit + 1
 	gagoRequest.fetchedRows = testResponse.RowCount + 1
 
-	//readCounts := float64(testResponse.SamplesReadCounts[0])
-	//samplingSize := float64(testResponse.SamplingSpaceSizes[0])
+	readCounts := float64(testResponse.SamplesReadCounts[0])
+	samplingSize := float64(testResponse.SamplingSpaceSizes[0])
 
-	//fmt.Println("sampling found: ", (readCounts/samplingSize)*100)
+	myMessage(join("Sampling found: ", fmt.Sprintf("%f", (readCounts/samplingSize)*100),
+		"- making exploratory API call to find date ranges"))
 
 	// if sampled, fetch exploratory sessions call
 	var explore = GoogleAnalyticsRequest{
@@ -49,7 +51,7 @@ func makeAntiSampleRequestList(gagoRequest *GoogleAnalyticsRequest) [][]*ga.Repo
 		Metrics:    "ga:sessions",
 		MaxRows:    9999}
 	exploreResponse := GoogleAnalytics(explore)
-	//fmt.Println("Explore found", exploreResponse.Totals)
+	myMessage(join("Exploratory call found total rows:", strconv.FormatInt(exploreResponse.RowCount, 10)))
 
 	// work out date ranges to fetch
 	sessionsSoFar := 0
@@ -88,8 +90,8 @@ func makeAntiSampleRequestList(gagoRequest *GoogleAnalyticsRequest) [][]*ga.Repo
 	newStartDates = deleteEmptyStringSlice(newStartDates)
 	newEndDates = deleteEmptyStringSlice(newEndDates)
 
-	//fmt.Println("start dates", newStartDates)
-	//fmt.Println("end dates", newEndDates)
+	myMessage(join("Start Dates:", fmt.Sprintf("%v", newStartDates)))
+	myMessage(join("End dates", fmt.Sprintf("%v", newEndDates)))
 
 	// construct new GoogleAnalyticsRequest objects via makeRequestList(gagoRequest)
 	antiSampleRequests := make([][][]*analyticsreporting.ReportRequest, len(newStartDates))

@@ -12,7 +12,7 @@ import (
 func makeRequestList(gagoRequest *GoogleAnalyticsRequest) [][]*ga.ReportRequest {
 
 	gagoRequest.maxPages = (gagoRequest.MaxRows / (gagoRequest.PageLimit * apiBatchLimit)) + 1
-	//fmt.Println("maxPages: ", gagoRequest.maxPages)
+	myMessage(join("Making API requests - maxPages: ", strconv.FormatInt(gagoRequest.maxPages, 10)))
 
 	requestList := make([][]*ga.ReportRequest, gagoRequest.maxPages)
 	fetchMore := true
@@ -23,8 +23,12 @@ func makeRequestList(gagoRequest *GoogleAnalyticsRequest) [][]*ga.ReportRequest 
 		// a loop around 5 requests
 		reqp := make([]*ga.ReportRequest, apiBatchLimit)
 		for j := range reqp {
-			//fmt.Println("ps", gagoRequest.pageSize, " pt", gagoRequest.pageToken, " pl",
-			//	gagoRequest.PageLimit, " mr", gagoRequest.MaxRows, "fr", gagoRequest.fetchedRows)
+			myMessage(join("pageSize:",
+				strconv.FormatInt(gagoRequest.pageSize, 10),
+				" pageToken:", gagoRequest.pageToken,
+				" pageLimit:", strconv.FormatInt(gagoRequest.PageLimit, 10),
+				" maxRows:", strconv.FormatInt(gagoRequest.MaxRows, 10),
+				" fetchedRows:", strconv.FormatInt(gagoRequest.fetchedRows, 10)))
 			req := makeRequest(*gagoRequest)
 			reqp[j] = req
 
@@ -35,7 +39,7 @@ func makeRequestList(gagoRequest *GoogleAnalyticsRequest) [][]*ga.ReportRequest 
 			// stop fetching if we've reached maxRows
 			if gagoRequest.pageSize < gagoRequest.PageLimit ||
 				(gagoRequest.MaxRows > 0 && gagoRequest.fetchedRows >= gagoRequest.MaxRows) {
-				//fmt.Println("dont fetchmore")
+				myMessage("Finished constructing API requests")
 				fetchMore = false
 				break
 			}
@@ -68,7 +72,7 @@ func fetchConcurrentReport(requestList [][]*ga.ReportRequest, gagoRequest Google
 		//fmt.Println("batch: ", i, min(i+concurrencyLimit, len(requestList)))
 		batch := requestList[i:min(i+concurrencyLimit, len(requestList))]
 		var wg sync.WaitGroup
-		//fmt.Println("api concurrency size:", len(batch))
+		myMessage(join("API concurrent fetch size:", strconv.Itoa(len(batch))))
 
 		wg.Add(len(batch))
 
@@ -78,7 +82,7 @@ func fetchConcurrentReport(requestList [][]*ga.ReportRequest, gagoRequest Google
 			go func(j int, request []*ga.ReportRequest, gagoRequest GoogleAnalyticsRequest, responseIndex int) {
 				defer wg.Done()
 				responses[responseIndex] = fetchReport(gagoRequest, request)
-				//fmt.Println("responseIndex: ", responseIndex)
+				myMessage(join("Concurrent API call for responseIndex: ", strconv.Itoa(responseIndex)))
 			}(j, request, gagoRequest, responseIndex)
 			responseIndex++
 		}
@@ -86,18 +90,6 @@ func fetchConcurrentReport(requestList [][]*ga.ReportRequest, gagoRequest Google
 		wg.Wait()
 
 	}
-
-	// fmt.Println("responseIndex", responseIndex)
-	// for _, res := range responses {
-	// 	//fmt.Println("response i>", i)
-	// 	if res == nil {
-	// 		fmt.Println("res=nil")
-	// 		continue
-	// 	}
-	// 	for _, report := range res.Reports {
-	// 		fmt.Println(report.Data.RowCount)
-	// 	}
-	// }
 
 	return responses
 }
@@ -135,8 +127,8 @@ func makeRequest(gagoRequest GoogleAnalyticsRequest) *ga.ReportRequest {
 	requests.PageToken = gagoRequest.pageToken
 
 	// print out json request
-	//js, _ := requests.MarshalJSON()
-	//fmt.Println("\n# Request:", string(js))
+	js, _ := requests.MarshalJSON()
+	myMessage(join("Request:", string(js)))
 
 	return &requests
 }

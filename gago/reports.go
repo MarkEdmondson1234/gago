@@ -1,7 +1,9 @@
 package gago
 
 import (
+	"encoding/json"
 	"fmt"
+	"strconv"
 
 	ga "google.golang.org/api/analyticsreporting/v4"
 	"google.golang.org/api/googleapi"
@@ -10,12 +12,15 @@ import (
 const concurrencyLimit = 10
 const apiBatchLimit = 5
 
+var verbose bool
+
 //GoogleAnalyticsRequest Make a request object to pass to GoogleAnalytics
+//Set MaxRows to -1 to fetch all rows available
 type GoogleAnalyticsRequest struct {
 	Service                                 *ga.Service
 	ViewID, Start, End, Dimensions, Metrics string
 	MaxRows, PageLimit                      int64
-	UseResourceQuotas, AntiSample           bool
+	UseResourceQuotas, AntiSample, Verbose  bool
 	pageSize, fetchedRows, maxPages         int64
 	pageToken                               string
 	fetchAll                                bool
@@ -24,12 +29,23 @@ type GoogleAnalyticsRequest struct {
 //GoogleAnalytics Make a request to the v4 Reporting API
 func GoogleAnalytics(gagoRequest GoogleAnalyticsRequest) *ParseReport {
 
+	if gagoRequest.Verbose {
+		verbose = true
+		myMessage("verbose=true")
+		myMessage(join("GoogleAnalyticsRequest: ", fmt.Sprintf("%+v", gagoRequest)))
+	}
+
 	// init ""
 	if gagoRequest.PageLimit == 0 {
 		gagoRequest.PageLimit = 10000
 	}
 
-	if gagoRequest.MaxRows == 0 {
+	if gagoRequest.MaxRows < 0 {
+		gagoRequest.MaxRows = gagoRequest.PageLimit
+		gagoRequest.fetchAll = true
+	}
+
+	if gagoRequest.fetchAll {
 		// need to do one fetch to see actual number of rows
 		test := GoogleAnalyticsRequest{
 			Service:    gagoRequest.Service,
@@ -66,9 +82,6 @@ func GoogleAnalytics(gagoRequest GoogleAnalyticsRequest) *ParseReport {
 
 	responses := fetchConcurrentReport(requestList, gagoRequest)
 
-	//js, _ := json.MarshalIndent(responses, "", " ")
-	//fmt.Println("\n# All Responses:", string(js))
-
 	parseReports, _ := parseReportsResponse(responses, gagoRequest)
 
 	return parseReports
@@ -91,6 +104,7 @@ type ParseReport struct {
 	Maximums              []string                `json:"maximums,omitempty"`
 	Minimums              []string                `json:"minimums,omitempty"`
 	RowCount              int64                   `json:"rowCount,omitempty"`
+	FetchedRowCount       int64                   `json:"fetchedRowCount,omitempty"`
 	SamplesReadCounts     googleapi.Int64s        `json:"samplesReadCounts,omitempty"`
 	SamplingSpaceSizes    googleapi.Int64s        `json:"samplingSpaceSizes,omitempty"`
 	Totals                []string                `json:"totals,omitempty"`
@@ -137,6 +151,7 @@ func parseReportsResponse(responses []*ga.GetReportsResponse, gagoRequest Google
 				parsed.SamplesReadCounts = report.Data.SamplesReadCounts
 				parsed.SamplingSpaceSizes = report.Data.SamplingSpaceSizes
 				parsed.Totals = report.Data.Totals[0].Values
+				parsed.RowCount = report.Data.RowCount
 			}
 
 			for _, row := range report.Data.Rows {
@@ -149,20 +164,20 @@ func parseReportsResponse(responses []*ga.GetReportsResponse, gagoRequest Google
 				rowNum++
 			}
 
-			// 0 indexed, only last page of results
-			if i == (len(res.Reports) - 1) {
-				pageToken = report.NextPageToken
-			}
+			pageToken = report.NextPageToken
+
 		}
 	}
 
 	// remove nulls
 	parsed.Rows = deleteEmptyRowSlice(parsedRowp)
-	parsed.RowCount = rowNum
+	parsed.FetchedRowCount = rowNum
 
-	// js, _ := json.Marshal(parsed)
-	// fmt.Println("parsed: ", string(js))
-	//fmt.Println("Parsed rows: ", rowNum)
+	if verbose {
+		js, _ := json.Marshal(parsed)
+		myMessage(join("Parsed: ", string(js)))
+		myMessage(join("Parsed rows:", strconv.FormatInt(rowNum, 10)))
+	}
 
 	return &parsed, pageToken
 

@@ -1,6 +1,11 @@
 package gago
 
-import "strings"
+import (
+	"fmt"
+	"log"
+	"strings"
+	"time"
+)
 
 func min(a, b int) int {
 	if a <= b {
@@ -35,4 +40,14 @@ func join(strs ...string) string {
 		sb.WriteString(str)
 	}
 	return sb.String()
+}
+
+func myMessage(s string) {
+
+	if verbose {
+		fmt.Println(time.Now().Format("Mon Jan _2 15:04:05 2006"), ">", s)
+	} else {
+		log.Println(join("gago: ", s))
+	}
+
 }
