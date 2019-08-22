@@ -35,11 +35,10 @@ deps:
 		$(GOGET) google.golang.org/api/googleapi
 		$(GOGET) google.golang.org/api/option
 
-
 # Cross compilation
 release:
 		mkdir -p release
 		cd gagocli
-		env GOOS=linux GOARCH=amd64 $(GOBUILD) -o ../release$(CLI)-$(VERSION)-linux-amd64 -v $(BINARY_NAME_CLI)
+		env GOOS=linux GOARCH=amd64 $(GOBUILD) -o ../release/$(CLI)-$(VERSION)-linux-amd64 -v $(BINARY_NAME_CLI)
 		env GOOS=darwin GOARCH=amd64 $(GOBUILD) -o ../release/$(CLI)-$(VERSION)-darwin-amd64 -v $(BINARY_NAME_CLI)
 		env GOOS=windows GOARCH=amd64 $(GOBUILD) -o ../release/$(CLI)-$(VERSION)-windows-amd64.exe -v $(BINARY_NAME_CLI)
