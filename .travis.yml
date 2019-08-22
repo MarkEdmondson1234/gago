@@ -5,4 +5,5 @@ go:
 
 before_install: cd gago
 
-script: go test -v ./...
+script: 
+- go test -v ./...

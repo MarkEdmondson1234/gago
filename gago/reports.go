@@ -18,8 +18,8 @@ var verbose bool
 //Service needs to be the reportingService from Analytics
 //ViewID is the GA View to fetch from
 //Start and End are strings in YYYY-MM-DD format
-//Metrics is required, a comma seperated string of valid ga: prefix
-//Dimensions expects a comma seerated string with valid ga: prefix
+//Metrics is required, a comma separated string of valid ga: prefix
+//Dimensions expects a comma separated string with valid ga: prefix
 //MaxRows set to -1 to fetch all rows available
 //PageLimit set how many pages to fetch each API request batch - default 10000
 //UseResourceQuotas if using GA360, set this to TRUE to get increased quota limits

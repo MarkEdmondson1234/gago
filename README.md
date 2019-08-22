@@ -2,6 +2,8 @@
 Google Analytics for Go
 
 [![Build Status](https://travis-ci.com/MarkEdmondson1234/gago.svg?branch=master)](https://travis-ci.com/MarkEdmondson1234/gago)
+[![codecov](https://codecov.io/gh/MarkEdmondson1234/gago/branch/master/graph/badge.svg)](https://codecov.io/gh/MarkEdmondson1234/gago)
+[![Go Report Card](https://goreportcard.com/badge/github.com/MarkEdmondson1234/gago)](https://goreportcard.com/report/github.com/MarkEdmondson1234/gago)
 
 [gago documentation on godoc.com](https://godoc.org/github.com/MarkEdmondson1234/gago/gago)
 
