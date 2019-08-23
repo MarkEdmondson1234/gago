@@ -1,6 +1,8 @@
 package gago
 
 import (
+	"encoding/json"
+	"fmt"
 	"log"
 	"strconv"
 	"strings"
@@ -82,7 +84,10 @@ func fetchConcurrentReport(requestList [][]*ga.ReportRequest, gagoRequest Google
 			go func(j int, request []*ga.ReportRequest, gagoRequest GoogleAnalyticsRequest, responseIndex int) {
 				defer wg.Done()
 				responses[responseIndex] = fetchReport(gagoRequest, request)
-				myMessage(join("Concurrent API call for responseIndex: ", strconv.Itoa(responseIndex)))
+				if verbose {
+					myMessage(join("Concurrent API call for responseIndex: ", strconv.Itoa(responseIndex)))
+				}
+
 			}(j, request, gagoRequest, responseIndex)
 			responseIndex++
 		}
@@ -126,9 +131,11 @@ func makeRequest(gagoRequest GoogleAnalyticsRequest) *ga.ReportRequest {
 	requests.SamplingLevel = "LARGE"
 	requests.PageToken = gagoRequest.pageToken
 
-	// print out json request
-	js, _ := requests.MarshalJSON()
-	myMessage(join("Request:", string(js)))
+	if verbose {
+		// print out json request
+		js, _ := requests.MarshalJSON()
+		myMessage(join("Request:", string(js)))
+	}
 
 	return &requests
 }
@@ -150,8 +157,10 @@ func fetchReport(
 		log.Fatal("Nil report:", reportreq)
 	}
 
-	//js, _ := json.Marshal(report)
-	//fmt.Println("\n## fetched ", string(js))
+	if verbose {
+		js, _ := json.Marshal(report)
+		fmt.Println("\n## fetched ", string(js))
+	}
 
 	return report
 

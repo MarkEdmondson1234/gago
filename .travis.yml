@@ -21,11 +21,14 @@ deploy:
   on:
     repo: MarkEdmondson1234/gago
     tags: true
-
 before_install:
 - openssl aes-256-cbc -K $encrypted_de38e743208e_key -iv $encrypted_de38e743208e_iv
   -in mark-edmondson-gde.json.enc -out mark-edmondson-gde.json -d
 - mv mark-edmondson-gde.json ${GOPATH}/auth.json
-
 after_success:
   - bash <(curl -s https://codecov.io/bash)
+notifications:
+  slack: googleauthrverse:tGfXjSD58cQSEr1YuzQ5hKPS
+  email:
+    on_success: change
+    on_failure: change
