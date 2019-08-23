@@ -12,3 +12,5 @@
 *.out
 
 *.code-workspace
+
+release/*
