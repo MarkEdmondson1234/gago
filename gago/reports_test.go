@@ -1,7 +1,6 @@
 package gago
 
 import (
-	"fmt"
 	"os"
 	"testing"
 )
@@ -10,8 +9,7 @@ import (
 func TestReport(t *testing.T) {
 
 	if os.Getenv("GAGO_AUTH") == "" {
-		fmt.Println("Skip test, no auth")
-		return
+		t.Skip("Skip test, no auth")
 	}
 
 	authFile := os.Getenv("GAGO_AUTH")
@@ -35,4 +33,6 @@ func TestReport(t *testing.T) {
 	if report.FetchedRowCount == 0 {
 		t.Errorf("No rows fetched!")
 	}
+
+	WriteCSV(report, os.Stdout)
 }

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/csv"
 	"flag"
 
 	"github.com/MarkEdmondson1234/gago/gago"
@@ -200,14 +199,7 @@ func main() {
 
 		report := gago.GoogleAnalytics(req)
 
-		// write headers
-		var metricHeaders []string
-		for _, met := range report.ColumnHeaderMetrics {
-			metricHeaders = append(metricHeaders, met.Name)
-		}
-		headerRow := append(report.ColumnHeaderDimension, metricHeaders...)
-
-		var writer *csv.Writer
+		var output *os.File
 		if len(flags.output) > 0 {
 			// write to csv
 			file, err := os.Create(flags.output)
@@ -217,23 +209,14 @@ func main() {
 			}
 			defer file.Close()
 
-			writer = csv.NewWriter(file)
+			output = file
 		} else {
 			// print to console
-			writer = csv.NewWriter(os.Stdout)
+			output = os.Stdout
 		}
 
-		defer writer.Flush()
-		writer.Write(headerRow)
+		gago.WriteCSV(report, output)
 
-		for _, value := range report.Rows {
-			// write rows
-			fullrow := append(value.Dimensions, value.Metrics...)
-			err := writer.Write(fullrow)
-			checkError("Couldn't write to file", err)
-		}
-
-		//fmt.Println("Downloaded Rows: ", report.RowCount)
 	default:
 		fmt.Println("Command not recognised:", os.Args[1])
 		os.Exit(1)

@@ -1,8 +1,10 @@
 package gago
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
 
 	ga "google.golang.org/api/analyticsreporting/v4"
@@ -192,4 +194,25 @@ func parseReportsResponse(responses []*ga.GetReportsResponse, gagoRequest Google
 
 	return &parsed, pageToken
 
+}
+
+//WriteCSV Will write out in CSV format
+func WriteCSV(report *ParseReport, file *os.File) {
+	// write headers
+	var metricHeaders []string
+	for _, met := range report.ColumnHeaderMetrics {
+		metricHeaders = append(metricHeaders, met.Name)
+	}
+	headerRow := append(report.ColumnHeaderDimension, metricHeaders...)
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	writer.Write(headerRow)
+
+	for _, value := range report.Rows {
+		// write rows
+		fullrow := append(value.Dimensions, value.Metrics...)
+		err := writer.Write(fullrow)
+		checkError("Couldn't write to file", err)
+	}
 }

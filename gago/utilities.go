@@ -3,6 +3,7 @@ package gago
 import (
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"time"
 )
@@ -50,4 +51,11 @@ func myMessage(s string) {
 		log.Println(join("gago: ", s))
 	}
 
+}
+
+func checkError(s string, err error) {
+	if err != nil {
+		fmt.Println(s)
+		os.Exit(1)
+	}
 }

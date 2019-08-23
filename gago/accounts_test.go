@@ -1,7 +1,6 @@
 package gago
 
 import (
-	"fmt"
 	"os"
 	"testing"
 )
@@ -9,8 +8,7 @@ import (
 //TestReport Test antisampling and concurrency with batching
 func TestAccounts(t *testing.T) {
 	if os.Getenv("GAGO_AUTH") == "" {
-		fmt.Println("Skip test, no auth")
-		return
+		t.Skip("Skip test, no auth")
 	}
 
 	authFile := os.Getenv("GAGO_AUTH")
