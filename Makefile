@@ -42,5 +42,4 @@ release:
 		env GOOS=linux GOARCH=amd64 $(GOBUILD) -o release/$(CLI)-$(VERSION)-linux-amd64 $(BINARY_NAME_CLI)
 		env GOOS=darwin GOARCH=amd64 $(GOBUILD) -o release/$(CLI)-$(VERSION)-darwin-amd64 $(BINARY_NAME_CLI)
 		env GOOS=windows GOARCH=amd64 $(GOBUILD) -o release/$(CLI)-$(VERSION)-windows-amd64.exe $(BINARY_NAME_CLI)
-		echo Releases in $(pwd)/release
 		ls release
