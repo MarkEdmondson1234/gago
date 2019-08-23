@@ -8,14 +8,13 @@ import (
 
 //TestReport Test antisampling and concurrency with batching
 func TestAntisample(t *testing.T) {
-
-	authFile := os.Getenv("GAGO_AUTH")
-	analyticsreportingService, _ := Authenticate(authFile)
-
 	if os.Getenv("GAGO_AUTH") == "" {
 		fmt.Println("Skip test, no auth")
 		return
 	}
+
+	authFile := os.Getenv("GAGO_AUTH")
+	analyticsreportingService, _ := Authenticate(authFile)
 
 	var req = GoogleAnalyticsRequest{
 		Service:    analyticsreportingService,
