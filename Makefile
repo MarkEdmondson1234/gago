@@ -11,7 +11,7 @@ BINARY_NAME=github.com/MarkEdmondson1234/gago/$(LIB)
 BINARY_NAME_CLI=github.com/MarkEdmondson1234/gago/$(CLI)
 BINARY_UNIX=$(BINARY_NAME)_unix
 BINARY_UNIX_CLI=$(BINARY_NAME_CLI)_unix
-VERSION ?=vlatest
+VERSION ?=latest
 
 all: deps test install
 install: 
