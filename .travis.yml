@@ -14,7 +14,7 @@ deploy:
   skip_cleanup: true
   api_key:
     secure: FSk8DEG1vae8uUYaV+XZtgXXqzikq3qEj7eSHOI540RpSISKSYjloAMB7RaAbZYfVR5JbEqNlb6JIzPYH3U4pYFKd55abWoEFjReKcyhZgJE7j7AzZr5kltKEp8Zp7OwcX5BWwx3lcol/v5Tq534+SdPUZbVosBMRWx6XmlLIrr6qBd5flUlrhbe9qNhskRmlVUZswJBeU1mJbT2wnmLgn2Rc+NBmYQhR1iU5WEnQGnq+ZcKyhDWa08yeXt/SBS69ItA5WonzSXRjgHutAX3dk3tqVRi9QmVKsTzHQDSeagc7jMbmzeEc+vGPg4Oqkqy0Bax/ElpyXEsTm4jeqDdx6BWf9ncjnRnkzDC1rqJHvO13LJX5Nkf2PjlfBIlzL+zo3zGZ18FwqL+NPxsxr5DPiFfqIi3ZDZLHh0TY8kIAr7K7+sKXGoZiXMGnds6O7duzdYzXMw5XHn9DpXalXcQ5sP0GjjUpwSiOlF8t++WpSJDfytxQPVt7f9wlEvWjIR6lBLNf5AluHWhcIH5K6Xr1RNjjJ+zB6JNRTgzJhjMuHaBqNbWgO7GXrM2gSonXwDeUCBV8jklVGJyhxAoBMzUznZlNor0d9gt/ZyFGhEKORgJMqBucQjSerlWsWTOwGQWQcOcfVkww3zJok61MB/umwescm0eV072jvTS6GarzlA=
-  file: release/*
+  file: /release/*
   on:
     repo: MarkEdmondson1234/gago
     tags: true
