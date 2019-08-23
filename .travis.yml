@@ -4,8 +4,9 @@ go:
 script:
 - make deps test
 env:
-- GAGO_AUTH=${GOPATH}/auth.json
-- VERSION=v${TRAVIS_TAG}
+  global:
+    - GAGO_AUTH=${GOPATH}/auth.json
+    - VERSION=v${TRAVIS_TAG}
 before_deploy:
 - make release
 deploy:
