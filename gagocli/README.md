@@ -54,7 +54,7 @@ Usage of reports:
   -end string
     	The end date (YYYY-mm-dd) to run config for
   -max int
-    	The amount of rows to fetch.  Use 0 to fetch all rows (default 1000)
+    	The amount of rows to fetch.  Use -1 to fetch all rows (default 1000)
   -mets string
     	The metrics ('ga:users,ga:sessions') to run config for
   -o string

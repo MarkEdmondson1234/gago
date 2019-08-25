@@ -36,7 +36,7 @@ func parseArgs() (string, argFlags) {
 	var antisample = reportCmd.Bool("antisample", false, "Whether to run anti-sampling")
 	var metrics = reportCmd.String("mets", "", "The metrics ('ga:users,ga:sessions') to run config for")
 	var dimensions = reportCmd.String("dims", "", "The dimensions ('ga:date,ga:sourceMedium') to run config for")
-	var maxRows = reportCmd.Int64("max", 1000, "The amount of rows to fetch.  Use 0 to fetch all rows")
+	var maxRows = reportCmd.Int64("max", 1000, "The amount of rows to fetch.  Use -1 to fetch all rows")
 	var config = reportCmd.String("c", "", "Optional config.yml specifying arguments")
 	var auth = reportCmd.String("a", "", "File path to auth.json service file. Or set via GAGO_AUTH environment argument")
 	var output = reportCmd.String("o", "", "If used will write CSV output to this file")
