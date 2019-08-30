@@ -18,6 +18,7 @@ deploy:
     - release/gagocli-${VERSION}-linux-amd64
     - release/gagocli-${VERSION}-darwin-amd64
     - release/gagocli-${VERSION}-windows-amd64.exe
+    - release/gago-${VERSION}-webassembly.wasm
   on:
     repo: MarkEdmondson1234/gago
     tags: true
