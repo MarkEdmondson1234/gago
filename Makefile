@@ -29,12 +29,16 @@ run:
 		$(GOINSTALL) $(BINARY_NAME_CLI)
 		$(CLI)
 deps:
+		$(GOCMD) version
 		$(GOGET) github.com/olebedev/config
 		$(GOGET) google.golang.org/api/analytics/v3
 		$(GOGET) google.golang.org/api/analyticsreporting/v4
 		$(GOGET) google.golang.org/api/googleapi
 		$(GOGET) google.golang.org/api/option
 		$(GOGET) golang.org/x/sys/unix
+
+wasm:
+		cp "$(go env GOROOT)/misc/wasm/wasm_exec.js" .
 
 # Cross compilation
 release:

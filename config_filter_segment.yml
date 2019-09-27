@@ -1,0 +1,80 @@
+gago:
+  view: 81416156
+  metrics: ga:sessions,ga:users
+  dimensions: ga:segment,ga:date,ga:sourceMedium,ga:landingPagePath
+  start: 2019-01-01
+  end: 2019-03-01
+  maxRows: 1000
+  antisample: true
+  filterClauses:
+    dimension:
+      - filters:
+        operator: OR
+        - caseSensitive: false
+          name: ga:source
+          expressions: google
+          not: true
+          operator: REGEXP
+        - caseSensitive: false
+          name: ga:source
+          expressions: yahoo
+          not: true
+          operator: EXACT
+      - filters:
+        operator: AND
+        - caseSensitive: true
+          name: ga:medium
+          expressions: organic
+          not: false
+          operator: EXACT
+        - caseSensitive: false
+          name: ga:country
+          expressions: denmark
+          not: false
+          operator: EXACT        
+    metrics:
+      - filters:
+        operator: OR
+        - comparisonValue: 1
+          name: ga:sessions
+          not: false
+          operator: GREATER_THAN  
+        - comparisonValue: 2
+          name: ga:bounces
+          not: true
+          operator: LESS_THAN
+  segments:
+    - segmentId: gaid::-3
+    - dynamic:
+        name:
+        sessionSegment:
+          segmentFilters:
+            - simpleSegment:
+              orFiltersForSegment:
+                - segmentFilterClauses:
+                  - segmentDimensionFilter:
+                    name: ga:city
+                    expressions:
+                      - New York
+                      - London
+                      - Copenhagen
+            - sequenceSegment:
+              firstStepShouldMatchFirstHit: true
+              segmentSequenceSteps:
+                - matchType: PRECEDES
+                  orFiltersForSegment:
+                    - segmentFilterClauses:
+                      - segmentMetricFilter:
+                        comparisonValue: 5
+                        maxComparisonValue: 30
+                        name: ga:sessions
+                        operator: BETWEEN
+                        scope: SESSION
+                - matchType: IMMEDIATELY_PRECEDES
+                  orFiltersForSegment:
+        userSegment:
+  order:
+    - field: ga:hour
+      type: DIMENSION_AS_INTEGER
+      order: DESCENDING
+      
