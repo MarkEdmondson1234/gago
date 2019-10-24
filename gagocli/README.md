@@ -14,16 +14,6 @@ curl -o gagocli https://github.com/MarkEdmondson1234/gago/releases/download/v0.2
 # from folder where download is
 mv gagocli /usr/local/bin/gagocli
 sudo chmod 755 /usr/local/bin/gagocli
-
-# should now be able to use via
-gagocli
-#gagocli [subcommand...] [arguments...]
-#
-#Subcommand:
-#reports	Download data from Google Analytics API v4
-#accounts Get account summary of accounts, webproperties and viewIds
-#
-#Use -h to get help on subcommand e.g. gagocli report -h
 ```
 
 ### Linux
@@ -34,16 +24,6 @@ wget -O gagocli https://github.com/MarkEdmondson1234/gago/releases/download/v0.2
 # from folder where download is
 mv gagocli /usr/local/bin/gagocli
 sudo chmod 755 /usr/local/bin/gagocli
-
-# should now be able to use via
-gagocli
-#gagocli [subcommand...] [arguments...]
-#
-#Subcommand:
-#reports	Download data from Google Analytics API v4
-#accounts Get account summary of accounts, webproperties and viewIds
-#
-#Use -h to get help on subcommand e.g. gagocli report -h
 ```
 
 
