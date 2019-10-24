@@ -10,7 +10,7 @@ Download the binary of the appropriate type for your system and put it in your b
 ### MacOS
 
 ```
-curl -o gagocli https://github.com/MarkEdmondson1234/gago/releases/download/v0.2.1/gagocli-vlatest-darwin-amd64
+curl -o gagocli https://github.com/MarkEdmondson1234/gago/releases/download/v0.2.1/gagocli-v0.2.1-darwin-amd64
 # from folder where download is
 mv gagocli /usr/local/bin/gagocli
 sudo chmod 755 /usr/local/bin/gagocli
