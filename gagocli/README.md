@@ -29,7 +29,11 @@ sudo chmod 755 /usr/local/bin/gagocli
 
 ### Windows
 
-?
+Download https://github.com/MarkEdmondson1234/gago/releases/download/v0.2.1/gagocli-v0.2.1-windows-amd64.exe
+
+Change permissions so you can run it (how?)
+
+Put .exe in location you can call from terminal (how?)
  
 ## Setup
 
