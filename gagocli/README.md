@@ -7,10 +7,10 @@ Find the latest binary for your system (Windows/MacOS/linux) in the [release pag
 
 Download the binary of the appropriate type for your system and put it in your bin folder such as /usr/local/bin - rename it to `gagocli` and chmod to 755
 
-e.g. on MacOS
+### MacOS
 
 ```
-curl -o gagocli https://github.com/MarkEdmondson1234/gago/releases/download/v0.1.0/gagocli-vlatest-darwin-amd64
+curl -o gagocli https://github.com/MarkEdmondson1234/gago/releases/download/v0.2.1/gagocli-vlatest-darwin-amd64
 # from folder where download is
 mv gagocli /usr/local/bin/gagocli
 sudo chmod 755 /usr/local/bin/gagocli
@@ -25,6 +25,33 @@ gagocli
 #
 #Use -h to get help on subcommand e.g. gagocli report -h
 ```
+
+### Linux
+
+```
+sudo apt-get install wget
+wget -O gagocli https://github.com/MarkEdmondson1234/gago/releases/download/v0.2.1/gagocli-v0.2.1-linux-amd64
+# from folder where download is
+mv gagocli /usr/local/bin/gagocli
+sudo chmod 755 /usr/local/bin/gagocli
+
+# should now be able to use via
+gagocli
+#gagocli [subcommand...] [arguments...]
+#
+#Subcommand:
+#reports	Download data from Google Analytics API v4
+#accounts Get account summary of accounts, webproperties and viewIds
+#
+#Use -h to get help on subcommand e.g. gagocli report -h
+```
+
+
+### Windows
+
+?
+ 
+## Setup
 
 Download an auth json file from a GCP project with analytics API enabled, and add the service email to the accounts you want to download.
 
