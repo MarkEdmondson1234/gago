@@ -204,6 +204,11 @@ func WriteCSV(report *ParseReport, file *os.File) {
 		metricHeaders = append(metricHeaders, met.Name)
 	}
 	headerRow := append(report.ColumnHeaderDimension, metricHeaders...)
+	
+	file, err := os.Create("goga_data.csv")
+    	checkError("Cannot create file.", err)
+    	defer file.Close()
+	
 	writer := csv.NewWriter(file)
 	defer writer.Flush()
 
