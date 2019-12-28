@@ -1,4 +1,4 @@
-FROM go
+FROM golang
 
 # install package dependencies
 RUN apt-get update && apt-get install -y \
