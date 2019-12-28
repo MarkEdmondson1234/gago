@@ -34,6 +34,15 @@ Download https://github.com/MarkEdmondson1234/gago/releases/download/v0.2.1/gago
 Change permissions so you can run it (how?)
 
 Put .exe in location you can call from terminal (how?)
+
+### Docker
+
+A docker image is built from each GitHub branch.  You can call `gagocli`  via:
+
+```bash
+docker run gcr.io/gcer-public/gago:master reports -h
+docker run gcr.io/gcer-public/gago:master accounts -h
+```
  
 ## Setup
 
