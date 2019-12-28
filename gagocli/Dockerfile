@@ -5,6 +5,4 @@ RUN wget -O gagocli https://github.com/MarkEdmondson1234/gago/releases/download/
     && mv gagocli /usr/local/bin/gagocli \
     && chmod 755 /usr/local/bin/gagocli
 
-ENTRYPOINT gagocli
-
-CMD ["reports", "-h"]
+CMD ["gagocli","reports", "-h"]
