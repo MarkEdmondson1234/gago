@@ -150,6 +150,7 @@ func parseReportsResponse(responses []*ga.GetReportsResponse, gagoRequest Google
 			//fmt.Println(string(js))
 
 			if report.Data == nil {
+				fmt.Println("Report data is empty")
 				break
 			}
 
