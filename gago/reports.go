@@ -149,6 +149,10 @@ func parseReportsResponse(responses []*ga.GetReportsResponse, gagoRequest Google
 			//js, _ := json.Marshal(report)
 			//fmt.Println(string(js))
 
+			if report.Data == nil {
+				break
+			}
+
 			if i == 0 {
 				var metHeaders []*ga.MetricHeaderEntry
 				for _, met := range report.ColumnHeader.MetricHeader.MetricHeaderEntries {
@@ -159,11 +163,17 @@ func parseReportsResponse(responses []*ga.GetReportsResponse, gagoRequest Google
 				parsed.ColumnHeaderMetrics = metHeaders
 				parsed.DataLastRefreshed = report.Data.DataLastRefreshed
 				parsed.IsDataGolden = report.Data.IsDataGolden
-				parsed.Maximums = report.Data.Maximums[0].Values
-				parsed.Minimums = report.Data.Minimums[0].Values
+				if len(report.Data.Maximums) > 0 {
+					parsed.Maximums = report.Data.Maximums[0].Values
+				}
+				if len(report.Data.Minimums) > 0 {
+					parsed.Minimums = report.Data.Minimums[0].Values
+				}
 				parsed.SamplesReadCounts = report.Data.SamplesReadCounts
 				parsed.SamplingSpaceSizes = report.Data.SamplingSpaceSizes
-				parsed.Totals = report.Data.Totals[0].Values
+				if len(report.Data.Totals) > 0 {
+					parsed.Totals = report.Data.Totals[0].Values
+				}
 				parsed.RowCount = report.Data.RowCount
 			}
 
