@@ -13,7 +13,7 @@ func GetAccounts(service *ga.Service) {
 
 	accountResponse, err := service.Management.Accounts.List().Do()
 	if err != nil {
-		log.Fatal("Can't find any accounts for this authentication")
+		log.Fatalf("Can't find any accounts for this authentication. %s", err)
 	}
 
 	for _, acc := range accountResponse.Items {
@@ -38,7 +38,7 @@ func GetAccountSummary(service *ga.Service) AccountSummary {
 
 	accountSummaryResponse, err := service.Management.AccountSummaries.List().Do()
 	if err != nil {
-		log.Fatal("Can't find account summary")
+		log.Fatalf("Can't find account summary: %s", err)
 	}
 
 	var as AccountSummary
